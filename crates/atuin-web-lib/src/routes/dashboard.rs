@@ -103,6 +103,7 @@ pub async fn get(
             errors => errors,
             server_url => state.config.atuin_server_url,
             active_page => "dashboard",
+            has_config_token => state.config.token.is_some(),
         },
     )?;
 

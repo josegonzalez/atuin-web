@@ -71,6 +71,7 @@ pub async fn get(
             },
             next => next,
             active_page => "records",
+            has_config_token => state.config.token.is_some(),
         },
     )?;
 

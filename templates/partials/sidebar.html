@@ -41,8 +41,10 @@
       </button>
     </div>
 
+    {% if not has_config_token %}
     <form method="POST" action="/logout" class="mt-2">
       <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Sign out</button>
     </form>
+    {% endif %}
   </div>
 </nav>

@@ -9,7 +9,15 @@ use crate::auth;
 use crate::error::WebError;
 use crate::templates;
 
-pub async fn get(State(state): State<AppState>) -> Result<Html<String>, WebError> {
+pub async fn get(
+    State(state): State<AppState>,
+    session: Session,
+) -> Result<Response, WebError> {
+    // Redirect to dashboard if already authenticated
+    if state.config.token.is_some() || auth::get_session_token(&session).await.is_some() {
+        return Ok(Redirect::to("/").into_response());
+    }
+
     let html = templates::render(
         &state.templates,
         "login.html",
@@ -17,7 +25,7 @@ pub async fn get(State(state): State<AppState>) -> Result<Html<String>, WebError
             error => false,
         },
     )?;
-    Ok(Html(html))
+    Ok(Html(html).into_response())
 }
 
 #[derive(Deserialize)]

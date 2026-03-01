@@ -44,6 +44,7 @@ pub async fn get(
         minijinja::context! {
             status => status,
             active_page => "sync",
+            has_config_token => state.config.token.is_some(),
         },
     )?;
 
