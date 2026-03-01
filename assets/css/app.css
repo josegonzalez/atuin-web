@@ -64,7 +64,7 @@
 }
 
 .sidebar-brand {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--bs-body-color);
   text-decoration: none;
@@ -144,7 +144,7 @@
 }
 
 .content-header {
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--bs-border-color);
   background: var(--bs-body-bg);
 }
@@ -195,11 +195,11 @@
   border-color: var(--bs-border-color);
 }
 
-.table > thead {
+.table>thead {
   border-bottom: 2px solid var(--bs-border-color);
 }
 
-.table > thead > tr > th {
+.table>thead>tr>th {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -209,13 +209,13 @@
   border-bottom: none;
 }
 
-.table > tbody > tr > td {
+.table>tbody>tr>td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--bs-border-color);
   vertical-align: middle;
 }
 
-.table > tbody > tr:last-child > td {
+.table>tbody>tr:last-child>td {
   border-bottom: none;
 }
 
@@ -503,9 +503,17 @@
   text-decoration-style: dotted;
 }
 
-.bg-surface-100 { background: var(--surface-100); }
-.bg-surface-200 { background: var(--surface-200); }
-.bg-surface-300 { background: var(--surface-300); }
+.bg-surface-100 {
+  background: var(--surface-100);
+}
+
+.bg-surface-200 {
+  background: var(--surface-200);
+}
+
+.bg-surface-300 {
+  background: var(--surface-300);
+}
 
 .border-strong {
   border-color: var(--border-strong) !important;
