@@ -1,0 +1,36 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    Sync Details
+    <span class="spinner-border spinner-border-sm htmx-indicator" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </span>
+  </div>
+  <div class="card-body">
+    {% if status is mapping and status.hosts %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Host</th>
+              <th>Tag</th>
+              <th>Records</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for host_id, tags in status.hosts | items %}
+              {% for tag, count in tags | items %}
+              <tr>
+                <td class="font-mono" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ host_id }}">{{ host_id }}</td>
+                <td class="font-mono">{{ tag }}</td>
+                <td class="font-mono">{{ count }}</td>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-secondary mb-0">No record status available.</p>
+    {% endif %}
+  </div>
+</div>

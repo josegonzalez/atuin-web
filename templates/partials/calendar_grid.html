@@ -1,0 +1,34 @@
+<div class="card">
+  <div class="card-header">Command Activity</div>
+  <div class="card-body">
+    {% if calendar is mapping %}
+      <div class="mb-3">
+        <div class="d-flex gap-1 mb-2" style="font-size: 0.75rem; color: var(--bs-tertiary-color);">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="calendar-grid">
+          {% for day, count in calendar | items %}
+            {% set level = 0 %}
+            {% if count > 0 %}{% set level = 1 %}{% endif %}
+            {% if count > 10 %}{% set level = 2 %}{% endif %}
+            {% if count > 50 %}{% set level = 3 %}{% endif %}
+            {% if count > 100 %}{% set level = 4 %}{% endif %}
+            <div class="calendar-cell" data-count="{{ count }}" data-level="{{ level }}" title="{{ day }}: {{ count }} commands"></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 mt-3" style="font-size: 0.75rem; color: var(--bs-tertiary-color);">
+        <span>Less</span>
+        <div class="calendar-cell" data-level="0" style="width: 12px; height: 12px;"></div>
+        <div class="calendar-cell" data-level="1" style="width: 12px; height: 12px;"></div>
+        <div class="calendar-cell" data-level="2" style="width: 12px; height: 12px;"></div>
+        <div class="calendar-cell" data-level="3" style="width: 12px; height: 12px;"></div>
+        <div class="calendar-cell" data-level="4" style="width: 12px; height: 12px;"></div>
+        <span>More</span>
+      </div>
+    {% else %}
+      <p class="text-secondary mb-0">Calendar data is not available with the v2 records API. History records are encrypted and cannot be aggregated server-side. Enable <code>sync_v1_enabled</code> on the atuin server for calendar support.</p>
+    {% endif %}
+  </div>
+</div>

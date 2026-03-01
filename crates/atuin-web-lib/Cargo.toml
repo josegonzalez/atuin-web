@@ -1,0 +1,33 @@
+[package]
+name = "atuin-web-lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "dylib"]
+
+[features]
+default = []
+embed-templates = []
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+tower = { workspace = true }
+tower-sessions = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+minijinja = { workspace = true }
+minijinja-autoreload = { workspace = true }
+rust-embed = { workspace = true }
+clap = { workspace = true }
+mime_guess = { workspace = true }
+
+[dev-dependencies]
+axum-test = "16"
+mockito = "1"
+tower-sessions-memory-store = { workspace = true }

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Atuin Web{% endblock %}</title>
+  <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/css/app.css">
+  <script src="/assets/js/theme.js"></script>
+</head>
+<body>
+  {% block body %}
+  <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('show')" aria-label="Toggle navigation">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+
+  <div class="app-wrapper">
+    {% include "partials/sidebar.html" %}
+
+    <main class="main-content">
+      <div class="content-header">
+        <h1>{% block page_title %}{% endblock %}</h1>
+      </div>
+      <div class="content-body">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  {% include "partials/key_modal.html" %}
+  {% endblock %}
+
+  <script src="/assets/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/htmx.min.js"></script>
+  <script src="/assets/js/tweetnacl.min.js"></script>
+  <script src="/assets/js/msgpack.min.js"></script>
+  <script src="/assets/js/bip39.min.js"></script>
+  <script src="/assets/js/paseto-v4.min.js"></script>
+  <script src="/assets/js/decrypt.js"></script>
+</body>
+</html>

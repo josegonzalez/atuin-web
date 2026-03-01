@@ -1,0 +1,86 @@
+<div class="card-grid mb-4">
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label">Server Status</div>
+      <div class="stat-value">
+        {% if health == "Ok" %}
+          <span class="badge badge-status-healthy">Healthy</span>
+        {% else %}
+          <span class="badge badge-status-error">Unreachable</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label">History Count</div>
+      <div class="stat-value">{{ count.count | default("—") }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label">Username</div>
+      <div class="stat-value font-mono" style="font-size: 1.25rem;">{{ me.username | default("—") }}</div>
+    </div>
+  </div>
+</div>
+
+{% if errors and errors | length > 0 %}
+<div class="card mb-4" style="border-color: rgba(239, 68, 68, 0.3);">
+  <div class="card-header">
+    <span class="badge badge-status-error me-2">Connection Error</span>
+    Unable to reach atuin server
+  </div>
+  <div class="card-body">
+    <p class="mb-2" style="font-size: 0.875rem;">
+      Server URL: <code class="font-mono">{{ server_url }}</code>
+    </p>
+    <ul class="mb-3" style="font-size: 0.875rem;">
+      {% for error in errors %}
+      <li class="text-secondary">{{ error }}</li>
+      {% endfor %}
+    </ul>
+    <details>
+      <summary class="text-secondary" style="font-size: 0.8125rem; cursor: pointer;">Troubleshooting</summary>
+      <ul class="mt-2" style="font-size: 0.8125rem;">
+        <li>Verify the server is running at the configured URL</li>
+        <li>Check <code>--atuin-server-url</code> / <code>ATUIN_WEB_SERVER_URL</code></li>
+        <li>Ensure no firewall is blocking the connection</li>
+        <li>Check the atuin-web server logs for more details</li>
+      </ul>
+    </details>
+  </div>
+</div>
+{% endif %}
+
+{% if status and status.hosts %}
+<div class="card">
+  <div class="card-header">Record Status (per host)</div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Host</th>
+            <th>Tag</th>
+            <th>Records</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for host_id, tags in status.hosts | items %}
+            {% for tag, count in tags | items %}
+            <tr>
+              <td class="font-mono" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ host_id }}">{{ host_id }}</td>
+              <td class="font-mono">{{ tag }}</td>
+              <td class="font-mono">{{ count }}</td>
+            </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}

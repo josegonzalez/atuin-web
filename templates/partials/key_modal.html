@@ -1,0 +1,61 @@
+<div class="modal fade" id="keyModal" tabindex="-1" aria-labelledby="keyModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background: var(--surface-100); border-color: var(--bs-border-color);">
+      <div class="modal-header" style="border-color: var(--bs-border-color);">
+        <h5 class="modal-title" id="keyModalLabel">Encryption Key</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary" style="font-size: 0.875rem;">
+          Your encryption key stays in your browser and is never sent to the server.
+          It will be cleared when you close this tab.
+        </p>
+
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#keyBase64Tab" type="button" role="tab">Base64 Key</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#keyMnemonicTab" type="button" role="tab">BIP39 Mnemonic</button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="keyBase64Tab" role="tabpanel">
+            <div class="mb-3">
+              <label for="keyBase64Input" class="form-label">Base64-encoded key (32 bytes)</label>
+              <input type="password" class="form-control font-mono" id="keyBase64Input"
+                     placeholder="Paste your base64 key here...">
+              <div class="form-text">
+                Find your key:
+                <button type="button" class="btn btn-sm btn-outline-secondary font-mono ms-1 py-0 px-1" style="font-size: 0.75rem;" onclick="copyHintToClipboard(this, 'atuin key --base64')" title="Copy to clipboard">
+                  atuin key --base64 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="keyMnemonicTab" role="tabpanel">
+            <div class="mb-3">
+              <label for="keyMnemonicInput" class="form-label">24-word mnemonic phrase</label>
+              <textarea class="form-control font-mono" id="keyMnemonicInput" rows="3"
+                        placeholder="word1 word2 word3 ..."></textarea>
+              <div class="form-text">
+                Find your mnemonic:
+                <button type="button" class="btn btn-sm btn-outline-secondary font-mono ms-1 py-0 px-1" style="font-size: 0.75rem;" onclick="copyHintToClipboard(this, 'atuin key')" title="Copy to clipboard">
+                  atuin key <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="keyError" class="alert alert-danger d-none" role="alert"></div>
+        <div id="keySuccess" class="alert alert-success d-none" role="alert">Key loaded successfully.</div>
+      </div>
+      <div class="modal-footer" style="border-color: var(--bs-border-color);">
+        <button type="button" class="btn btn-outline-danger" id="keyClearBtn" onclick="clearEncryptionKey()">Clear Key</button>
+        <button type="button" class="btn btn-brand" id="keyLoadBtn" onclick="loadEncryptionKey()">Load Key</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,22 @@
+[workspace]
+members = ["crates/atuin-web", "crates/atuin-web-lib"]
+resolver = "2"
+
+[workspace.dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+tower = "0.5"
+tower-sessions = "0.15"
+tower-sessions-memory-store = "0.15"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2"
+uuid = { version = "1", features = ["serde"] }
+minijinja = { version = "2", features = ["loader"] }
+minijinja-autoreload = "2"
+rust-embed = { version = "8", features = ["mime-guess"] }
+clap = { version = "4", features = ["derive", "env"] }
+mime_guess = "2"

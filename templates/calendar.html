@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar - Atuin Web{% endblock %}
+{% block page_title %}Calendar{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <form hx-get="/calendar" hx-target="#calendar-content" hx-swap="innerHTML" class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label for="calYear" class="form-label" style="font-size: 0.8125rem;">Year</label>
+      <input type="number" class="form-control form-control-sm" id="calYear" name="year" value="{{ year | default('') }}" placeholder="YYYY">
+    </div>
+    <div class="col-auto">
+      <label for="calMonth" class="form-label" style="font-size: 0.8125rem;">Month</label>
+      <input type="number" class="form-control form-control-sm" id="calMonth" name="month" value="{{ month | default('') }}" min="1" max="12" placeholder="MM">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-sm btn-brand">Go</button>
+    </div>
+  </form>
+</div>
+
+<div id="calendar-content">
+  {% include "partials/calendar_grid.html" %}
+</div>
+{% endblock %}
