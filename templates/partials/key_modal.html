@@ -28,7 +28,7 @@
                      placeholder="Paste your base64 key here...">
               <div class="form-text">
                 Find your key:
-                <button type="button" class="btn btn-sm btn-outline-secondary font-mono ms-1 py-0 px-1" style="font-size: 0.75rem;" onclick="copyHintToClipboard(this, 'atuin key --base64')" title="Copy to clipboard">
+                <button type="button" class="btn btn-sm btn-outline-secondary font-mono ms-1 py-0 px-1" style="font-size: 0.75rem;" onclick="navigator.clipboard.writeText('atuin key --base64').then(function(){var t=document.getElementById('copyToast');if(t)bootstrap.Toast.getOrCreateInstance(t).show()})" title="Copy to clipboard">
                   atuin key --base64 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
               </div>
@@ -41,7 +41,7 @@
                         placeholder="word1 word2 word3 ..."></textarea>
               <div class="form-text">
                 Find your mnemonic:
-                <button type="button" class="btn btn-sm btn-outline-secondary font-mono ms-1 py-0 px-1" style="font-size: 0.75rem;" onclick="copyHintToClipboard(this, 'atuin key')" title="Copy to clipboard">
+                <button type="button" class="btn btn-sm btn-outline-secondary font-mono ms-1 py-0 px-1" style="font-size: 0.75rem;" onclick="navigator.clipboard.writeText('atuin key').then(function(){var t=document.getElementById('copyToast');if(t)bootstrap.Toast.getOrCreateInstance(t).show()})" title="Copy to clipboard">
                   atuin key <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
               </div>

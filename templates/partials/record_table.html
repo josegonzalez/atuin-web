@@ -22,8 +22,6 @@
           <tr>
             <th>ID</th>
             <th>Host</th>
-            <th>Tag</th>
-            <th>Version</th>
             <th>Data</th>
           </tr>
         </thead>
@@ -34,9 +32,9 @@
               <td class="font-mono" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ record.id | default('') }}">
                 {{ record.id | default("—") }}
               </td>
-              <td class="font-mono">{{ record.host.id | default(record.host | default("—")) }}</td>
-              <td>{{ record.tag | default("—") }}</td>
-              <td>{{ record.version | default("—") }}</td>
+              <td class="font-mono" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ record.host.id | default(record.host | default('')) }}">
+                {{ record.host.id | default(record.host | default("—")) }}
+              </td>
               <td data-encrypted="{{ record.data.data | default('') }}"
                   data-cek="{{ record.data.content_encryption_key | default('') }}"
                   data-rid="{{ record.id | default('') }}"
@@ -50,7 +48,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="5" class="text-center text-secondary py-4">No records found</td>
+              <td colspan="3" class="text-center text-secondary py-4">No records found</td>
             </tr>
           {% endif %}
         </tbody>

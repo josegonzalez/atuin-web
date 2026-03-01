@@ -464,6 +464,11 @@
   color: var(--brand-accent) !important;
 }
 
+.copyable-command:hover code {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
 .bg-surface-100 { background: var(--surface-100); }
 .bg-surface-200 { background: var(--surface-200); }
 .bg-surface-300 { background: var(--surface-300); }

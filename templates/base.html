@@ -28,11 +28,19 @@
   </div>
 
   {% include "partials/key_modal.html" %}
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;" id="toastContainer">
+    <div id="copyToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="2000">
+      <div class="d-flex">
+        <div class="toast-body">Copied to clipboard</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
   {% endblock %}
 
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/htmx.min.js"></script>
-  <script src="/assets/js/tweetnacl.min.js"></script>
   <script src="/assets/js/msgpack.min.js"></script>
   <script src="/assets/js/bip39.min.js"></script>
   <script src="/assets/js/blake2b.min.js"></script>

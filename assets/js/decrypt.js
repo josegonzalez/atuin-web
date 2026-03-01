@@ -1,5 +1,5 @@
 // Client-side decryption orchestration for Atuin Web
-// Key management + NaCl XSalsa20Poly1305 for legacy history + PASETO V4 for records
+// Key management + PASETO V4 for records
 (function() {
   "use strict";
 
@@ -42,39 +42,6 @@
     } else {
       btn.classList.remove("has-key");
       text.textContent = "No key loaded";
-    }
-  }
-
-  // Decrypt legacy history entry (XSalsa20Poly1305)
-  // Atuin format: nonce (24 bytes) + ciphertext, base64-encoded
-  function decryptLegacyHistory(b64Data, key) {
-    if (!b64Data || !key || typeof nacl === "undefined") return null;
-
-    try {
-      var raw = atob(b64Data);
-      var data = new Uint8Array(raw.length);
-      for (var i = 0; i < raw.length; i++) data[i] = raw.charCodeAt(i);
-
-      // First 24 bytes are nonce, rest is ciphertext
-      var nonce = data.slice(0, 24);
-      var ciphertext = data.slice(24);
-
-      var plaintext = nacl.secretbox.open(ciphertext, nonce, key);
-      if (!plaintext) return null;
-
-      // Plaintext is MessagePack-encoded
-      if (typeof MessagePack !== "undefined") {
-        var decoded = MessagePack.decode(plaintext);
-        if (decoded && decoded.command) return decoded.command;
-        if (typeof decoded === "string") return decoded;
-        return JSON.stringify(decoded);
-      }
-
-      // Fallback: try UTF-8 decode
-      return new TextDecoder().decode(plaintext);
-    } catch (e) {
-      console.warn("Decryption failed:", e);
-      return null;
     }
   }
 
@@ -161,42 +128,32 @@
           }
 
           el.innerHTML = "";
+          var wrapper = document.createElement("span");
+          wrapper.className = "copyable-command";
+          wrapper.title = "Click to copy";
+          wrapper.style.cursor = "pointer";
           var code = document.createElement("code");
           code.className = "font-mono";
           code.textContent = display;
-          el.appendChild(code);
+          wrapper.appendChild(code);
+          wrapper.addEventListener("click", function() {
+            navigator.clipboard.writeText(display).then(function() {
+              var toastEl = document.getElementById("copyToast");
+              if (toastEl) {
+                var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                toast.show();
+              }
+            });
+          });
+          el.appendChild(wrapper);
         } catch (e) {
           console.warn("Record decryption failed:", e);
         }
         return;
       }
 
-      // Legacy history decryption
-      var plaintext = decryptLegacyHistory(data, key);
-      if (plaintext) {
-        el.innerHTML = "";
-        var code = document.createElement("code");
-        code.className = "font-mono";
-        code.textContent = plaintext;
-        el.appendChild(code);
-      }
     });
   }
-
-  // Copy a command hint to clipboard
-  window.copyHintToClipboard = function(btn, text) {
-    navigator.clipboard.writeText(text).then(function() {
-      var original = btn.innerHTML;
-      btn.innerHTML = "Copied!";
-      btn.classList.add("btn-success");
-      btn.classList.remove("btn-outline-secondary");
-      setTimeout(function() {
-        btn.innerHTML = original;
-        btn.classList.remove("btn-success");
-        btn.classList.add("btn-outline-secondary");
-      }, 1500);
-    });
-  };
 
   // Global functions for the key modal
   window.loadEncryptionKey = async function() {
