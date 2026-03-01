@@ -20,7 +20,6 @@ pub struct AppState {
 pub fn create_router(state: AppState) -> Router {
     let authed = Router::new()
         .route("/", get(routes::dashboard::get))
-        .route("/calendar", get(routes::calendar::get))
         .route("/sync", get(routes::sync_status::get))
         .route("/records", get(routes::records::get))
         .route("/logout", post(routes::logout::post))

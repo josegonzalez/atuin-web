@@ -269,26 +269,6 @@
   margin-top: 0.25rem;
 }
 
-/* ===== Calendar Heatmap ===== */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-}
-
-.calendar-cell {
-  aspect-ratio: 1;
-  border-radius: 3px;
-  background: var(--surface-200);
-  min-width: 14px;
-}
-
-.calendar-cell[data-count="0"] { background: var(--surface-200); }
-.calendar-cell[data-level="1"] { background: rgba(62, 207, 142, 0.25); }
-.calendar-cell[data-level="2"] { background: rgba(62, 207, 142, 0.5); }
-.calendar-cell[data-level="3"] { background: rgba(62, 207, 142, 0.75); }
-.calendar-cell[data-level="4"] { background: var(--brand-accent); }
-
 /* ===== Forms ===== */
 .form-control,
 .form-select {

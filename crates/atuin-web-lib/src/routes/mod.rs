@@ -1,4 +1,3 @@
-pub mod calendar;
 pub mod dashboard;
 pub mod login;
 pub mod logout;
