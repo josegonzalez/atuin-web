@@ -169,13 +169,6 @@ pub async fn get(
         &state.templates,
         template,
         minijinja::context! {
-            records => match records {
-                Ok(v) => v,
-                Err(e) => {
-                    tracing::warn!(error = %e, "failed to fetch records from /api/v0/record");
-                    serde_json::Value::default()
-                }
-            },
             next => next,
             pagination => pagination,
             active_page => "records",

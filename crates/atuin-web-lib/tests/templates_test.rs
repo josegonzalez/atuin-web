@@ -60,7 +60,6 @@ fn test_render_pagination_multi_page() {
         &env,
         "partials/record_table.html",
         minijinja::context! {
-            records => serde_json::json!({}),
             next => serde_json::json!([]),
             pagination => pagination,
         },
@@ -95,7 +94,6 @@ fn test_render_pagination_hidden_single_page() {
         &env,
         "partials/record_table.html",
         minijinja::context! {
-            records => serde_json::json!({}),
             next => serde_json::json!([]),
             pagination => pagination,
         },
@@ -126,7 +124,6 @@ fn test_render_pagination_hidden_zero_records() {
         &env,
         "partials/record_table.html",
         minijinja::context! {
-            records => serde_json::json!({}),
             next => serde_json::json!([]),
             pagination => pagination,
         },
