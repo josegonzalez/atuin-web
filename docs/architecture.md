@@ -18,7 +18,7 @@ Browser <--HTTP--> [atuin-web (Axum 0.8)] <--API client--> [atuin server]
 3. Route handler calls atuin server API via `AtuinClient`
 4. Response data is rendered into MiniJinja templates
 5. HTML is returned to the browser
-6. htmx is loaded for future partial page updates; `decrypt.js` listens on `htmx:afterSwap` to re-process encrypted elements
+6. htmx handles partial page updates (e.g., records pagination via `hx-get` / `hx-target` / `hx-push-url`); `decrypt.js` listens on `htmx:afterSwap` to re-process encrypted elements
 
 ## Security Model
 
@@ -45,4 +45,4 @@ Static assets and templates are embedded into the release binary via `rust-embed
 - `bip39.min.js` — BIP39 mnemonic word list for key input
 - `decrypt.js` — Key management (sessionStorage), decryption orchestration, click-to-copy
 - `theme.js` — Dark/light theme toggle
-- `htmx.min.js` — Loaded for partial page updates; not yet used via `hx-*` attributes in templates
+- `htmx.min.js` — Partial page updates; used for records pagination via `hx-*` attributes

@@ -1,0 +1,84 @@
+{% if pagination.total_records > 0 %}
+<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+  <div class="text-secondary" style="font-size: 0.8125rem;">
+    Page {{ pagination.current_page }} of {{ pagination.total_pages }}
+    ({{ pagination.total_records }} total records)
+  </div>
+
+  <div class="d-flex align-items-center gap-3">
+    {% if pagination.total_pages > 1 %}
+    <nav aria-label="Records pagination">
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
+          <a class="page-link"
+             href="/records?page={{ pagination.prev_page }}&page_size={{ pagination.page_size }}"
+             hx-get="/records?page={{ pagination.prev_page }}&page_size={{ pagination.page_size }}"
+             hx-target="#records-content"
+             hx-push-url="true"
+             {% if not pagination.has_prev %}tabindex="-1" aria-disabled="true"{% endif %}>
+            &laquo;
+          </a>
+        </li>
+
+        {% if pagination.page_numbers[0] > 1 %}
+        <li class="page-item">
+          <a class="page-link"
+             href="/records?page=1&page_size={{ pagination.page_size }}"
+             hx-get="/records?page=1&page_size={{ pagination.page_size }}"
+             hx-target="#records-content"
+             hx-push-url="true">1</a>
+        </li>
+        {% if pagination.page_numbers[0] > 2 %}
+        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+        {% endif %}
+        {% endif %}
+
+        {% for num in pagination.page_numbers %}
+        <li class="page-item{% if num == pagination.current_page %} active{% endif %}">
+          <a class="page-link"
+             href="/records?page={{ num }}&page_size={{ pagination.page_size }}"
+             hx-get="/records?page={{ num }}&page_size={{ pagination.page_size }}"
+             hx-target="#records-content"
+             hx-push-url="true">{{ num }}</a>
+        </li>
+        {% endfor %}
+
+        {% if pagination.page_numbers[-1] < pagination.total_pages %}
+        {% if pagination.page_numbers[-1] < pagination.total_pages - 1 %}
+        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+        {% endif %}
+        <li class="page-item">
+          <a class="page-link"
+             href="/records?page={{ pagination.total_pages }}&page_size={{ pagination.page_size }}"
+             hx-get="/records?page={{ pagination.total_pages }}&page_size={{ pagination.page_size }}"
+             hx-target="#records-content"
+             hx-push-url="true">{{ pagination.total_pages }}</a>
+        </li>
+        {% endif %}
+
+        <li class="page-item{% if not pagination.has_next %} disabled{% endif %}">
+          <a class="page-link"
+             href="/records?page={{ pagination.next_page }}&page_size={{ pagination.page_size }}"
+             hx-get="/records?page={{ pagination.next_page }}&page_size={{ pagination.page_size }}"
+             hx-target="#records-content"
+             hx-push-url="true"
+             {% if not pagination.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+            &raquo;
+          </a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+
+    <select class="form-select form-select-sm"
+            style="width: auto;"
+            onchange="window.location.href='/records?page=1&page_size=' + this.value">
+      {% for size in pagination.page_sizes %}
+      <option value="{{ size }}"{% if size == pagination.page_size %} selected{% endif %}>
+        {{ size }} per page
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+{% endif %}

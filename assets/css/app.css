@@ -459,6 +459,40 @@
   background: var(--border-strong);
 }
 
+/* ===== Pagination ===== */
+.page-link {
+  background: var(--surface-100);
+  border-color: var(--bs-border-color);
+  color: var(--bs-secondary-color);
+  font-size: 0.8125rem;
+  transition: all 0.15s ease;
+}
+
+.page-link:hover {
+  background: var(--surface-200);
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+.page-link:focus {
+  background: var(--surface-200);
+  border-color: var(--brand-accent);
+  color: var(--bs-body-color);
+  box-shadow: 0 0 0 0.2rem rgba(62, 207, 142, 0.25);
+}
+
+.page-item.active .page-link {
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: #000;
+}
+
+.page-item.disabled .page-link {
+  background: var(--surface-100);
+  border-color: var(--bs-border-color);
+  color: var(--text-faint);
+}
+
 /* ===== Misc ===== */
 .text-brand {
   color: var(--brand-accent) !important;
