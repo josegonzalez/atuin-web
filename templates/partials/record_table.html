@@ -37,7 +37,13 @@
               <td class="font-mono">{{ record.host.id | default(record.host | default("—")) }}</td>
               <td>{{ record.tag | default("—") }}</td>
               <td>{{ record.version | default("—") }}</td>
-              <td data-encrypted="{{ record.data | default('') }}" data-cek="{{ record.content_encryption_key | default('') }}">
+              <td data-encrypted="{{ record.data.data | default('') }}"
+                  data-cek="{{ record.data.content_encryption_key | default('') }}"
+                  data-rid="{{ record.id | default('') }}"
+                  data-ridx="{{ record.idx | default(0) }}"
+                  data-rversion="{{ record.version | default('') }}"
+                  data-rtag="{{ record.tag | default('') }}"
+                  data-rhost="{{ record.host.id | default(record.host | default('')) }}">
                 <span class="badge badge-encrypted">[encrypted]</span>
               </td>
             </tr>

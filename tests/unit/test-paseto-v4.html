@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PASETO V4 Test Vectors</title>
+  <style>
+    body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+    .pass { color: #4caf50; }
+    .fail { color: #f44336; }
+    .section { margin: 20px 0; padding: 10px; border: 1px solid #333; }
+    h2 { color: #82aaff; }
+    pre { white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+    #summary { font-size: 18px; margin: 20px 0; padding: 15px; border: 2px solid #333; }
+  </style>
+</head>
+<body>
+  <h1>PASETO V4 + PASERK PIE Test Vectors</h1>
+  <div id="summary">Running tests...</div>
+  <div id="results"></div>
+
+  <script src="../../assets/js/blake2b.min.js"></script>
+  <script src="../../assets/js/paseto-v4.js"></script>
+  <script>
+    (function() {
+      var results = document.getElementById("results");
+      var passed = 0;
+      var failed = 0;
+
+      function hexToBytes(hex) {
+        var bytes = new Uint8Array(hex.length / 2);
+        for (var i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+        }
+        return bytes;
+      }
+
+      function bytesToHex(bytes) {
+        var hex = "";
+        for (var i = 0; i < bytes.length; i++) {
+          hex += (bytes[i] < 16 ? "0" : "") + bytes[i].toString(16);
+        }
+        return hex;
+      }
+
+      function log(name, ok, detail) {
+        var div = document.createElement("div");
+        div.className = ok ? "pass" : "fail";
+        div.textContent = (ok ? "PASS" : "FAIL") + " " + name;
+        if (detail) {
+          var pre = document.createElement("pre");
+          pre.textContent = detail;
+          div.appendChild(pre);
+        }
+        results.appendChild(div);
+        if (ok) passed++; else failed++;
+      }
+
+      // --- PASETO V4 Local Decryption Tests ---
+
+      var v4Tests = [
+        {
+          name: "4-E-1 (zero nonce, no footer, no implicit)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAr68PS4AXe7If_ZgesdkUMvSwscFlAl1pk5HC0e8kApeaqMfGo_7OpBnwJOAbY9V7WU6abu74MmcUE8YWAiaArVI8XJ5hOb_4v9RmDkneN0S92dx0OW4pgy7omxgf3S8c3LlQg",
+          payload: '{"data":"this is a secret message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: "",
+          implicit: ""
+        },
+        {
+          name: "4-E-2 (zero nonce, hidden message)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAr68PS4AXe7If_ZgesdkUMvS2csCgglvpk5HC0e8kApeaqMfGo_7OpBnwJOAbY9V7WU6abu74MmcUE8YWAiaArVI8XIemu9chy3WVKvRBfg6t8wwYHK0ArLxxfZP73W_vfwt5A",
+          payload: '{"data":"this is a hidden message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: "",
+          implicit: ""
+        },
+        {
+          name: "4-E-3 (non-zero nonce, no footer)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WkwMsYXw6FSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t6-tyebyWG6Ov7kKvBdkrrAJ837lKP3iDag2hzUPHuMKA",
+          payload: '{"data":"this is a secret message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: "",
+          implicit: ""
+        },
+        {
+          name: "4-E-4 (non-zero nonce, hidden message)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WiA8rd3wgFSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t4gt6TiLm55vIH8c_lGxxZpE3AWlH4WTR0v45nsWoU3gQ",
+          payload: '{"data":"this is a hidden message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: "",
+          implicit: ""
+        },
+        {
+          name: "4-E-5 (with footer, no implicit)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WkwMsYXw6FSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t4x-RMNXtQNbz7FvFZ_G-lFpk5RG3EOrwDL6CgDqcerSQ.eyJraWQiOiJ6VmhNaVBCUDlmUmYyc25FY1Q3Z0ZUaW9lQTlDT2NOeTlEZmdMMVc2MGhhTiJ9",
+          payload: '{"data":"this is a secret message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: '{"kid":"zVhMiPBP9fRf2snEcT7gFTioeA9COcNy9DfgL1W60haN"}',
+          implicit: ""
+        },
+        {
+          name: "4-E-6 (with footer, hidden message)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WiA8rd3wgFSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t6pWSA5HX2wjb3P-xLQg5K5feUCX4P2fpVK3ZLWFbMSxQ.eyJraWQiOiJ6VmhNaVBCUDlmUmYyc25FY1Q3Z0ZUaW9lQTlDT2NOeTlEZmdMMVc2MGhhTiJ9",
+          payload: '{"data":"this is a hidden message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: '{"kid":"zVhMiPBP9fRf2snEcT7gFTioeA9COcNy9DfgL1W60haN"}',
+          implicit: ""
+        },
+        {
+          name: "4-E-7 (with footer AND implicit assertion)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WkwMsYXw6FSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t40KCCWLA7GYL9KFHzKlwY9_RnIfRrMQpueydLEAZGGcA.eyJraWQiOiJ6VmhNaVBCUDlmUmYyc25FY1Q3Z0ZUaW9lQTlDT2NOeTlEZmdMMVc2MGhhTiJ9",
+          payload: '{"data":"this is a secret message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: '{"kid":"zVhMiPBP9fRf2snEcT7gFTioeA9COcNy9DfgL1W60haN"}',
+          implicit: '{"test-vector":"4-E-7"}'
+        },
+        {
+          name: "4-E-8 (with footer AND implicit, hidden msg)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WiA8rd3wgFSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t5uvqQbMGlLLNYBc7A6_x7oqnpUK5WLvj24eE4DVPDZjw.eyJraWQiOiJ6VmhNaVBCUDlmUmYyc25FY1Q3Z0ZUaW9lQTlDT2NOeTlEZmdMMVc2MGhhTiJ9",
+          payload: '{"data":"this is a hidden message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: '{"kid":"zVhMiPBP9fRf2snEcT7gFTioeA9COcNy9DfgL1W60haN"}',
+          implicit: '{"test-vector":"4-E-8"}'
+        },
+        {
+          name: "4-E-9 (non-JSON footer, with implicit)",
+          key: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          token: "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WiA8rd3wgFSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t6tybdlmnMwcDMw0YxA_gFSE_IUWl78aMtOepFYSWYfQA.YXJiaXRyYXJ5LXN0cmluZy10aGF0LWlzbid0LWpzb24",
+          payload: '{"data":"this is a hidden message","exp":"2022-01-01T00:00:00+00:00"}',
+          footer: "arbitrary-string-that-isn't-json",
+          implicit: '{"test-vector":"4-E-9"}'
+        }
+      ];
+
+      // Section header
+      var h2 = document.createElement("h2");
+      h2.textContent = "PASETO V4 Local Decryption";
+      results.appendChild(h2);
+
+      for (var i = 0; i < v4Tests.length; i++) {
+        var t = v4Tests[i];
+        var key = hexToBytes(t.key);
+        try {
+          var result = PasetoV4.decrypt(t.token, key, t.implicit);
+          if (result === t.payload) {
+            log(t.name, true);
+          } else {
+            log(t.name, false, "Expected: " + t.payload + "\nGot:      " + result);
+          }
+        } catch (e) {
+          log(t.name, false, "Exception: " + e.message);
+        }
+      }
+
+      // --- Wrong implicit assertion should fail ---
+      var h2b = document.createElement("h2");
+      h2b.textContent = "PASETO V4 Negative Tests";
+      results.appendChild(h2b);
+
+      (function() {
+        var key = hexToBytes("707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f");
+        // 4-E-7 with wrong implicit should return null (tag mismatch)
+        var token = "v4.local.32VIErrEkmY4JVILovbmfPXKW9wT1OdQepjMTC_MOtjA4kiqw7_tcaOM5GNEcnTxl60WkwMsYXw6FSNb_UdJPXjpzm0KW9ojM5f4O2mRvE2IcweP-PRdoHjd5-RHCiExR1IK6t40KCCWLA7GYL9KFHzKlwY9_RnIfRrMQpueydLEAZGGcA.eyJraWQiOiJ6VmhNaVBCUDlmUmYyc25FY1Q3Z0ZUaW9lQTlDT2NOeTlEZmdMMVc2MGhhTiJ9";
+        var result = PasetoV4.decrypt(token, key, '{"test-vector":"WRONG"}');
+        log("Wrong implicit assertion returns null", result === null);
+      })();
+
+      (function() {
+        var key = hexToBytes("0000000000000000000000000000000000000000000000000000000000000000");
+        // Wrong key should fail
+        var token = "v4.local.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAr68PS4AXe7If_ZgesdkUMvSwscFlAl1pk5HC0e8kApeaqMfGo_7OpBnwJOAbY9V7WU6abu74MmcUE8YWAiaArVI8XJ5hOb_4v9RmDkneN0S92dx0OW4pgy7omxgf3S8c3LlQg";
+        var result = PasetoV4.decrypt(token, key, "");
+        log("Wrong key returns null", result === null);
+      })();
+
+      // --- PASERK PIE Unwrap Tests ---
+      var h3 = document.createElement("h2");
+      h3.textContent = "PASERK PIE Key Unwrapping";
+      results.appendChild(h3);
+
+      var pieTests = [
+        {
+          name: "k4.local-wrap.pie-1 (zero key)",
+          unwrapped: "0000000000000000000000000000000000000000000000000000000000000000",
+          wrappingKey: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          paserk: "k4.local-wrap.pie.y-PC8Zh6P1DoOBUdhRr7W8GWSgHtRKvE8PWWYA-qXy3fxJDmaRsxcZVQzuvXHZuBg5MqCgh_y5K0WbukJCrDX73Wdf631VBnE1DNHafbjnGNzFNWP59ba9ifsOAgE7Bw"
+        },
+        {
+          name: "k4.local-wrap.pie-2 (all-FF key)",
+          unwrapped: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          wrappingKey: "707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f",
+          paserk: "k4.local-wrap.pie.cy-Mu6zSfhu6q0_XdAM9p1zre_joUWjreSjHgisVNh-oHaNarN4_c7xuSyaHwqEDxF7lTbfNplBGU7wTeUyt__hZyj1J38NdNxVwuXamJY2QhRE-kWYA9_16xTsGwCQX"
+        }
+      ];
+
+      for (var j = 0; j < pieTests.length; j++) {
+        var pt = pieTests[j];
+        var wk = hexToBytes(pt.wrappingKey);
+        try {
+          var unwrapped = PasetoV4.unwrapPIE(pt.paserk, wk);
+          if (unwrapped && bytesToHex(unwrapped) === pt.unwrapped) {
+            log(pt.name, true);
+          } else {
+            log(pt.name, false, "Expected: " + pt.unwrapped + "\nGot:      " + (unwrapped ? bytesToHex(unwrapped) : "null"));
+          }
+        } catch (e) {
+          log(pt.name, false, "Exception: " + e.message);
+        }
+      }
+
+      // PIE failure tests
+      var h4 = document.createElement("h2");
+      h4.textContent = "PASERK PIE Negative Tests";
+      results.appendChild(h4);
+
+      (function() {
+        // Invalid auth tag
+        var wk = hexToBytes("707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f");
+        var result = PasetoV4.unwrapPIE(
+          "k4.local-wrap.pie.cy-Mu6zSfhu6q0_XdAM9p1zre_joUWjreSjHgisVNh-oHaNarN4_c7xuSyaHwqEDxF7lTbfNplBGU7wTeUyt__hZyj1J38NdNxVwuXamJY3QhRE-kWYA9_16xUtGwCQY",
+          wk
+        );
+        log("PIE fail-1: invalid auth tag returns null", result === null);
+      })();
+
+      (function() {
+        // Wrong version (k3 instead of k4)
+        var wk = hexToBytes("707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f");
+        var threw = false;
+        try {
+          PasetoV4.unwrapPIE(
+            "k3.local-wrap.pie.bkbHfW4bBJQ8jcPfLOYxUrg4SkKRHbsywYZwRvxUGFt1je2idZxlFr8sbkB6jTZ6hnrVlI25G2hqZtfdQyFIUcrRAiBrCWNPP1b3afdD9_YxsAXoKEA3X4AZhReuvHCzuPqXNCtrvJtpupGZn-PLFQ",
+            wk
+          );
+        } catch (e) {
+          threw = true;
+        }
+        log("PIE fail-2: wrong version throws", threw);
+      })();
+
+      // Summary
+      var summary = document.getElementById("summary");
+      if (failed === 0) {
+        summary.className = "pass";
+        summary.textContent = "All " + passed + " tests passed!";
+      } else {
+        summary.className = "fail";
+        summary.textContent = failed + " of " + (passed + failed) + " tests failed";
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -89,9 +89,85 @@
       if (!data || data === "") return;
 
       // Check for PASETO V4 (records)
-      var cek = el.getAttribute("data-cek");
-      if (cek) {
-        // Records use PASETO V4 - not yet implemented
+      var cekAttr = el.getAttribute("data-cek");
+      if (cekAttr) {
+        try {
+          if (typeof PasetoV4 === "undefined" || typeof blake2b === "undefined") return;
+
+          // Parse CEK wrapper — could be JSON {"wpk":"..."} or direct PASERK string
+          var wpk = cekAttr;
+          if (cekAttr.charAt(0) === "{") {
+            var cekData = JSON.parse(cekAttr);
+            wpk = cekData.wpk;
+          }
+          if (!wpk) return;
+
+          // Unwrap CEK using master key
+          var cekBytes = PasetoV4.unwrapPIE(wpk, key);
+          if (!cekBytes) return;
+
+          // Build implicit assertion from record metadata
+          var implicit = JSON.stringify({
+            id: el.getAttribute("data-rid") || "",
+            idx: parseInt(el.getAttribute("data-ridx") || "0", 10),
+            version: el.getAttribute("data-rversion") || "",
+            tag: el.getAttribute("data-rtag") || "",
+            host: el.getAttribute("data-rhost") || ""
+          });
+
+          // Decrypt PASETO token (try with implicit assertion, fall back to without)
+          var plaintext = PasetoV4.decrypt(data, cekBytes, implicit);
+          if (!plaintext) {
+            plaintext = PasetoV4.decrypt(data, cekBytes, "");
+          }
+          if (!plaintext) return;
+
+          // Parse AtuinPayload: {"data":"<base64url>"}
+          var payload = JSON.parse(plaintext);
+          var innerBytes = PasetoV4._base64urlDecode(payload.data);
+
+          // Atuin record data: nested msgpack with version prefixes.
+          // Outer: msgpack(version) + msgpack(bin)
+          // Inner bin: msgpack(version) + msgpack(history_struct)
+          // Use decodeMulti at each level since decode() throws on extra bytes.
+          var display;
+          if (typeof MessagePack !== "undefined") {
+            // Unwrap outer: version + bin blob
+            var outer = [];
+            for (var ov of MessagePack.decodeMulti(innerBytes)) outer.push(ov);
+            var blob = outer.length > 1 ? outer[1] : outer[0];
+
+            // Unwrap inner: version + history struct
+            var decoded;
+            if (blob instanceof Uint8Array) {
+              var inner = [];
+              for (var iv of MessagePack.decodeMulti(blob)) inner.push(iv);
+              decoded = inner.length > 1 ? inner[inner.length - 1] : inner[0];
+            } else {
+              decoded = blob;
+            }
+
+            if (decoded && decoded.command) {
+              display = decoded.command;
+            } else if (Array.isArray(decoded)) {
+              // rmp_serde compact format: struct as array
+              // History: [id, timestamp, duration, exit, command, cwd, session, hostname, deleted_at]
+              display = decoded[4] || JSON.stringify(decoded);
+            } else {
+              display = JSON.stringify(decoded);
+            }
+          } else {
+            display = new TextDecoder().decode(innerBytes);
+          }
+
+          el.innerHTML = "";
+          var code = document.createElement("code");
+          code.className = "font-mono";
+          code.textContent = display;
+          el.appendChild(code);
+        } catch (e) {
+          console.warn("Record decryption failed:", e);
+        }
         return;
       }
 
@@ -149,6 +225,17 @@
 
         if (typeof BIP39 === "undefined") throw new Error("BIP39 library not loaded");
         keyBytes = await BIP39.mnemonicToEntropy(mnemonic);
+      }
+
+      // Atuin stores the key as msgpack-encoded array, then base64.
+      // If we get != 32 bytes, try msgpack decoding to unwrap.
+      if (keyBytes.length !== 32 && typeof MessagePack !== "undefined") {
+        try {
+          var decoded = MessagePack.decode(keyBytes);
+          if (Array.isArray(decoded) && decoded.length === 32) {
+            keyBytes = new Uint8Array(decoded);
+          }
+        } catch (e) { /* not msgpack, fall through to size check */ }
       }
 
       if (keyBytes.length !== 32) {
