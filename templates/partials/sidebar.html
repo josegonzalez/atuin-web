@@ -33,12 +33,13 @@
   </div>
 
   <div class="sidebar-footer">
-    <button class="key-status w-100 mb-2" id="keyStatusBtn" data-bs-toggle="modal" data-bs-target="#keyModal" title="Encryption Key">
-      <span class="key-indicator"></span>
-      <span id="keyStatusText">No key loaded</span>
-    </button>
-
-    {% include "partials/theme_toggle.html" %}
+    <div class="d-flex gap-2 mb-2">
+      {% include "partials/theme_toggle.html" %}
+      <button class="key-status flex-grow-1" id="keyStatusBtn" data-bs-toggle="modal" data-bs-target="#keyModal" title="Encryption Key">
+        <span class="key-indicator"></span>
+        <span id="keyStatusText">No key loaded</span>
+      </button>
+    </div>
 
     <form method="POST" action="/logout" class="mt-2">
       <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Sign out</button>
