@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use atuin_web_lib::app::{self, AppState};
 use atuin_web_lib::client::AtuinClient;
 use atuin_web_lib::config::Config;
 use atuin_web_lib::templates;
@@ -8,6 +7,18 @@ use clap::Parser;
 use tower_sessions::cookie::time::Duration;
 use tower_sessions::{Expiry, SessionManagerLayer};
 use tower_sessions_memory_store::MemoryStore;
+
+#[cfg(feature = "hot-reload")]
+#[hot_lib_reloader::hot_module(dylib = "atuin_web_lib")]
+mod hot_lib {
+    pub use atuin_web_lib::app::AppState;
+    pub use axum::Router;
+
+    hot_functions_from_file!("crates/atuin-web-lib/src/app.rs");
+
+    #[lib_change_subscription]
+    pub fn subscribe() -> hot_lib_reloader::LibReloadObserver {}
+}
 
 #[tokio::main]
 async fn main() {
@@ -38,19 +49,64 @@ async fn main() {
     let client = AtuinClient::new(&config.atuin_server_url);
     let env = templates::create_environment();
 
-    let state = AppState {
-        config,
-        client,
-        templates: Arc::new(env),
-    };
+    let bind_addr = config.bind.clone();
 
-    let app = app::create_router(state).layer(session_layer);
+    #[cfg(not(feature = "hot-reload"))]
+    {
+        use atuin_web_lib::app::{self, AppState};
 
-    let listener = tokio::net::TcpListener::bind(&Config::parse().bind)
-        .await
-        .expect("Failed to bind");
+        let state = AppState {
+            config,
+            client,
+            templates: Arc::new(env),
+        };
 
-    tracing::info!("Listening on http://{}", listener.local_addr().unwrap());
+        let app = app::create_router(state).layer(session_layer);
 
-    axum::serve(listener, app).await.expect("Server error");
+        let listener = tokio::net::TcpListener::bind(&bind_addr)
+            .await
+            .expect("Failed to bind");
+
+        tracing::info!("Listening on http://{}", listener.local_addr().unwrap());
+
+        axum::serve(listener, app).await.expect("Server error");
+    }
+
+    #[cfg(feature = "hot-reload")]
+    {
+        use hot_lib::AppState;
+
+        let state = AppState {
+            config,
+            client,
+            templates: Arc::new(env),
+        };
+
+        loop {
+            let router = hot_lib::create_router(state.clone());
+            let app = router.layer(session_layer.clone());
+
+            let listener = tokio::net::TcpListener::bind(&bind_addr)
+                .await
+                .expect("Failed to bind");
+
+            tracing::info!("Listening on http://{}", listener.local_addr().unwrap());
+
+            let subscriber = hot_lib::subscribe();
+            let shutdown = async move {
+                tokio::task::spawn_blocking(move || {
+                    subscriber.wait_for_reload();
+                })
+                .await
+                .ok();
+            };
+
+            axum::serve(listener, app)
+                .with_graceful_shutdown(shutdown)
+                .await
+                .expect("Server error");
+
+            tracing::info!("Library reloaded, rebuilding router...");
+        }
+    }
 }

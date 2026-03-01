@@ -1,0 +1,2 @@
+lib: cargo watch -x 'build -p atuin-web-lib'
+web: cargo run -p atuin-web --features hot-reload -- --atuin-server-url ${ATUIN_SERVER_URL:-http://localhost:8888}
