@@ -3,7 +3,7 @@
 ## System Diagram
 
 ```
-Browser <--HTTP--> [atuin-web (Axum 0.8)] <--HTTP proxy--> [atuin server]
+Browser <--HTTP--> [atuin-web (Axum 0.8)] <--API client--> [atuin server]
                    |
                    +-- MiniJinja templates (disk in dev, embedded in release)
                    +-- Bootstrap 5.3 CSS/JS (embedded via rust-embed)
@@ -18,7 +18,7 @@ Browser <--HTTP--> [atuin-web (Axum 0.8)] <--HTTP proxy--> [atuin server]
 3. Route handler calls atuin server API via `AtuinClient`
 4. Response data is rendered into MiniJinja templates
 5. HTML is returned to the browser
-6. htmx handles partial page updates for filters and polling
+6. htmx is loaded for future partial page updates; `decrypt.js` listens on `htmx:afterSwap` to re-process encrypted elements
 
 ## Security Model
 
@@ -36,3 +36,13 @@ The project uses a Cargo workspace with two crates:
 - `crates/atuin-web-lib/` — Library crate (routes, templates, client, auth)
 
 Static assets and templates are embedded into the release binary via `rust-embed`.
+
+## Client-Side JavaScript
+
+- `paseto-v4.js` — PASETO V4 local decryption + PASERK PIE key unwrapping
+- `blake2b.min.js` — BLAKE2b hashing (used by PASETO key derivation)
+- `msgpack.min.js` — MessagePack decoding for decrypted record payloads
+- `bip39.min.js` — BIP39 mnemonic word list for key input
+- `decrypt.js` — Key management (sessionStorage), decryption orchestration, click-to-copy
+- `theme.js` — Dark/light theme toggle
+- `htmx.min.js` — Loaded for partial page updates; not yet used via `hx-*` attributes in templates
