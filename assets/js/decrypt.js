@@ -35,7 +35,22 @@
   function decodeRecord(tag, innerBytes) {
     // Unwrap outer: version + bin/data blob
     var outer = [];
-    for (var ov of MessagePack.decodeMulti(innerBytes)) outer.push(ov);
+    try {
+      for (var ov of MessagePack.decodeMulti(innerBytes)) outer.push(ov);
+    } catch (e) {
+      // Malformed msgpack — e.g. fixarray header declares more elements
+      // than present (deleted KV with omitted None value).
+      // Try extracting individual elements after the array header.
+      var fb = innerBytes[0];
+      if (fb >= 0x90 && fb <= 0x9f) {
+        var elems = [];
+        try {
+          for (var v of MessagePack.decodeMulti(innerBytes.slice(1))) elems.push(v);
+        } catch (_) { /* use what we got */ }
+        if (elems.length > 0) outer = [elems];
+      }
+      if (outer.length === 0) throw e;
+    }
     var blob = outer.length > 1 ? outer[1] : outer[0];
 
     switch (tag) {
@@ -274,7 +289,52 @@
           });
           el.appendChild(wrapper);
         } catch (e) {
-          console.warn("Record decryption failed:", e);
+          console.warn("Record decryption/decode failed:", e);
+
+          // Build full detail object for inspection
+          var detail = {
+            error: { message: e.message, type: e.name },
+            record: {
+              id: el.getAttribute("data-rid") || "",
+              idx: el.getAttribute("data-ridx") || "",
+              version: el.getAttribute("data-rversion") || "",
+              tag: el.getAttribute("data-rtag") || "",
+              host: el.getAttribute("data-rhost") || ""
+            }
+          };
+
+          // Include decrypted PASETO payload if available
+          if (typeof plaintext === "string") {
+            try { detail.decrypted_payload = JSON.parse(plaintext); } catch (_) { detail.decrypted_payload = plaintext; }
+          }
+
+          // Include raw bytes as hex if available
+          if (typeof innerBytes !== "undefined" && innerBytes instanceof Uint8Array) {
+            detail.raw_bytes = Array.prototype.map.call(innerBytes, function(b) {
+              return ("0" + b.toString(16)).slice(-2);
+            }).join("");
+            detail.raw_bytes_length = innerBytes.length;
+          }
+
+          var detailJson = JSON.stringify(detail, null, 2);
+
+          // Show clickable [decode error] badge
+          el.innerHTML = "";
+          var badge = document.createElement("span");
+          badge.className = "badge bg-warning text-dark";
+          badge.style.cursor = "pointer";
+          badge.textContent = "[decode error]";
+          badge.title = "Click to view record details";
+          badge.addEventListener("click", function() {
+            var contentEl = document.getElementById("errorDetailContent");
+            if (contentEl) contentEl.textContent = detailJson;
+            var modalEl = document.getElementById("errorDetailModal");
+            if (modalEl) {
+              var modal = new bootstrap.Modal(modalEl);
+              modal.show();
+            }
+          });
+          el.appendChild(badge);
         }
         return;
       }

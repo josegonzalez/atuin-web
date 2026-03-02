@@ -94,6 +94,26 @@
         assertEqual("KV Delete", result, "ns:delkey (deleted)");
       })();
 
+      (function() {
+        // KV Delete with truncated array: fixarray(4) header but only 3 elements
+        // Simulates real record: 94 a7"default" a3"baz" c2
+        var truncated = new Uint8Array([
+          0x94,                                                       // fixarray(4) — declares 4 elements
+          0xa7, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74,            // fixstr(7) "default"
+          0xa3, 0x62, 0x61, 0x7a,                                     // fixstr(3) "baz"
+          0xc2                                                        // false
+        ]);
+        var result = D.decodeRecord("kv", truncated);
+        assertEqual("KV Delete (truncated fixarray)", result, "default:baz (deleted)");
+      })();
+
+      (function() {
+        // KV Create as raw array (no version+blob wrapping)
+        var raw = MessagePack.encode(["myns", "mykey", true, "hello"]);
+        var result = D.decodeRecord("kv", raw);
+        assertEqual("KV Create (raw array, no version wrap)", result, "myns:mykey = hello");
+      })();
+
       // --- Alias Tests ---
       var h3 = document.createElement("h2");
       h3.textContent = "Alias Decoder";
