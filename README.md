@@ -2,6 +2,12 @@
 
 A web UI for [atuin](https://github.com/atuinsh/atuin), providing a browser-based interface to browse and search your shell history.
 
+## Screenshots
+
+| ![Dashboard](docs/screenshots/dashboard.png) | ![History](docs/screenshots/history.png) | ![Records](docs/screenshots/records-index.png) |
+|:---:|:---:|:---:|
+| Dashboard | History | Records |
+
 ## Quick Start
 
 ```bash
