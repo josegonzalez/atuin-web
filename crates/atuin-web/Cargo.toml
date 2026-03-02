@@ -3,10 +3,6 @@ name = "atuin-web"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-default = []
-hot-reload = ["dep:hot-lib-reloader"]
-
 [dependencies]
 atuin-web-lib = { path = "../atuin-web-lib" }
 axum = { workspace = true }
@@ -16,4 +12,3 @@ tower-sessions-memory-store = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 clap = { workspace = true }
-hot-lib-reloader = { version = "0.8", optional = true }

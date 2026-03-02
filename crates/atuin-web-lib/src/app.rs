@@ -17,7 +17,6 @@ pub struct AppState {
     pub templates: Arc<Environment<'static>>,
 }
 
-#[no_mangle]
 pub fn create_router(state: AppState) -> Router {
     let authed = Router::new()
         .route("/", get(routes::dashboard::get))
