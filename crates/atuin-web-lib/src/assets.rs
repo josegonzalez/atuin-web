@@ -6,6 +6,18 @@ use rust_embed::Embed;
 #[folder = "../../assets/"]
 pub struct StaticAssets;
 
+pub async fn serve_favicon() -> Result<Response, StatusCode> {
+    let file = StaticAssets::get("favicon.ico").ok_or(StatusCode::NOT_FOUND)?;
+    Ok((
+        [
+            (header::CONTENT_TYPE, "image/x-icon".to_string()),
+            (header::CACHE_CONTROL, "public, max-age=86400".to_string()),
+        ],
+        file.data,
+    )
+        .into_response())
+}
+
 pub async fn serve_asset(
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<Response, StatusCode> {

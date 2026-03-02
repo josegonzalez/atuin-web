@@ -30,7 +30,8 @@ pub fn create_router(state: AppState) -> Router {
     let public = Router::new()
         .route("/login", get(routes::login::get).post(routes::login::post))
         .route("/user/{username}", get(routes::user::get))
-        .route("/assets/{*path}", get(assets::serve_asset));
+        .route("/assets/{*path}", get(assets::serve_asset))
+        .route("/favicon.ico", get(assets::serve_favicon));
 
     Router::new()
         .merge(authed)
