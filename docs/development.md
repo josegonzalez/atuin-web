@@ -25,29 +25,29 @@ Templates are loaded from disk in debug mode, so changes to `templates/` are ref
 
 ## Auto-Restart Dev Server
 
-Use `cargo-watch` to automatically rebuild and restart the server on code changes. Templates already hot-reload from disk in debug mode without a restart.
+Use `watchexec` to automatically rebuild and restart the server on code changes. Templates already hot-reload from disk in debug mode without a restart.
 
 ### Prerequisites
 
 ```bash
-cargo install cargo-watch gaffa
+cargo install watchexec-cli
 ```
 
 ### Usage
 
-Start the dev environment with [gaffa](https://github.com/oryon-dominik/gaffa):
-
 ```bash
-gaffa run --procfile Procfile.dev --env-file .env
+./bin/dev
 ```
 
-Or run directly:
+This loads `.env`, then `exec`s `watchexec` so it is the direct foreground process. Ctrl+C cleanly terminates watchexec and all child processes. Pass CLI args to override the default bind address:
 
 ```bash
-cargo watch -x 'run -p atuin-web'
+./bin/dev --bind 127.0.0.1:3000
 ```
 
-When you save a Rust file, `cargo-watch` rebuilds and restarts the binary. Template changes (`templates/`) are picked up on the next request without a restart.
+When you save a `.rs` or `.toml` file, `watchexec` kills the running process and rebuilds. Template changes (`templates/`) are picked up on the next request without a restart.
+
+> **Note:** `Procfile.dev` is kept for Procfile-compatible runners, but gaffa does not forward signals to child processes on Ctrl+C ([gaffa#signal-handling](https://github.com/oryon-dominik/gaffa)), leaving orphaned listeners on the port. Prefer `bin/dev` instead.
 
 ## Test
 

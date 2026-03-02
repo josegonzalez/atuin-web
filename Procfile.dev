@@ -1,1 +1,1 @@
-web: cargo watch -x 'run -p atuin-web -- --bind "0.0.0.0:5001"'
+web: watchexec --restart -e rs,toml -- cargo run -p atuin-web -- --bind "0.0.0.0:5001"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
+
+exec watchexec --restart -e rs,toml -- cargo run -p atuin-web -- "${@:---bind 0.0.0.0:5001}"
