@@ -22,10 +22,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/", get(routes::dashboard::get))
         .route("/records", get(routes::records::get))
         .route("/logout", post(routes::logout::post))
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            require_auth,
-        ));
+        .layer(middleware::from_fn_with_state(state.clone(), require_auth));
 
     let public = Router::new()
         .route("/login", get(routes::login::get).post(routes::login::post))
@@ -33,8 +30,5 @@ pub fn create_router(state: AppState) -> Router {
         .route("/assets/{*path}", get(assets::serve_asset))
         .route("/favicon.ico", get(assets::serve_favicon));
 
-    Router::new()
-        .merge(authed)
-        .merge(public)
-        .with_state(state)
+    Router::new().merge(authed).merge(public).with_state(state)
 }

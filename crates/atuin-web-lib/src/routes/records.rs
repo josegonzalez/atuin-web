@@ -90,7 +90,7 @@ pub fn calculate_pagination(page: u64, total_records: u64, page_size: u64) -> Pa
     let total_pages = if total_records == 0 {
         1
     } else {
-        (total_records + page_size - 1) / page_size
+        total_records.div_ceil(page_size)
     };
     let current_page = page.max(1).min(total_pages);
 
@@ -146,16 +146,7 @@ pub async fn get(
     let tag = match &query.tag {
         Some(t) if ALLOWED_TAGS.contains(&t.as_str()) => t.clone(),
         _ => {
-            let is_htmx = headers
-                .get("HX-Request")
-                .map(|v| v == "true")
-                .unwrap_or(false);
-
-            let template = if is_htmx {
-                "records_index.html"
-            } else {
-                "records_index.html"
-            };
+            let template = "records_index.html";
 
             let html = templates::render(
                 &state.templates,
@@ -205,11 +196,7 @@ pub async fn get(
 
     // For history, paginate from the end so page 1 shows the newest records
     let (start, count) = if reverse {
-        reverse_pagination_window(
-            pagination.current_page,
-            total_records,
-            pagination.page_size,
-        )
+        reverse_pagination_window(pagination.current_page, total_records, pagination.page_size)
     } else {
         (
             (pagination.current_page - 1) * pagination.page_size,

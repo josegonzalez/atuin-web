@@ -96,11 +96,7 @@ impl AtuinClient {
     pub async fn healthz(&self) -> Result<String, WebError> {
         let url = format!("{}/healthz", self.base_url);
         debug!(url = %url, "GET healthz request");
-        let resp = self
-            .http
-            .get(&url)
-            .send()
-            .await?;
+        let resp = self.http.get(&url).send().await?;
         debug!(url = %url, status = %resp.status(), "GET healthz response");
 
         Ok(resp.text().await?)

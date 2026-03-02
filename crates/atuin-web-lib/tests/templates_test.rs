@@ -144,7 +144,13 @@ fn test_render_pagination_hidden_zero_records() {
 #[test]
 fn test_render_record_table_with_each_tag() {
     let env = templates::create_environment();
-    let tags = ["history", "kv", "config-shell-alias", "dotfiles-var", "script"];
+    let tags = [
+        "history",
+        "kv",
+        "config-shell-alias",
+        "dotfiles-var",
+        "script",
+    ];
     for tag in &tags {
         let pagination = PaginationInfo {
             current_page: 1,
@@ -168,7 +174,11 @@ fn test_render_record_table_with_each_tag() {
                 sort => "desc",
             },
         );
-        assert!(result.is_ok(), "Failed to render record_table for tag: {}", tag);
+        assert!(
+            result.is_ok(),
+            "Failed to render record_table for tag: {}",
+            tag
+        );
     }
 }
 
@@ -199,7 +209,10 @@ fn test_render_pagination_preserves_tag() {
     );
     assert!(result.is_ok());
     let html = result.unwrap();
-    assert!(html.contains("tag=kv"), "Pagination URLs should contain tag=kv");
+    assert!(
+        html.contains("tag=kv"),
+        "Pagination URLs should contain tag=kv"
+    );
 }
 
 #[test]
@@ -293,8 +306,17 @@ fn test_uuid7_timestamp_filter() {
     );
     assert!(result.is_ok());
     let html = result.unwrap();
-    assert!(html.contains(" ago"), "Should show relative duration, got: {}", html);
-    assert!(html.contains(">42<") || html.contains("> 42 <") || html.contains(">\n                42\n"), "Should show idx 42");
+    assert!(
+        html.contains(" ago"),
+        "Should show relative duration, got: {}",
+        html
+    );
+    assert!(
+        html.contains(">42<")
+            || html.contains("> 42 <")
+            || html.contains(">\n                42\n"),
+        "Should show idx 42"
+    );
 }
 
 #[test]
@@ -330,7 +352,10 @@ fn test_uuid7_timestamp_filter_invalid_input() {
     );
     assert!(result.is_ok());
     let html = result.unwrap();
-    assert!(html.contains("\u{2014}"), "Invalid UUID should show em-dash fallback");
+    assert!(
+        html.contains("\u{2014}"),
+        "Invalid UUID should show em-dash fallback"
+    );
 }
 
 #[test]
@@ -366,7 +391,10 @@ fn test_uuid7_timestamp_filter_empty_input() {
     );
     assert!(result.is_ok());
     let html = result.unwrap();
-    assert!(html.contains("\u{2014}"), "Empty string should show em-dash fallback");
+    assert!(
+        html.contains("\u{2014}"),
+        "Empty string should show em-dash fallback"
+    );
 }
 
 #[test]
@@ -396,9 +424,18 @@ fn test_render_pagination_preserves_sort() {
     );
     assert!(result.is_ok());
     let html = result.unwrap();
-    assert!(html.contains("sort=asc"), "Pagination URLs should preserve sort=asc");
+    assert!(
+        html.contains("sort=asc"),
+        "Pagination URLs should preserve sort=asc"
+    );
     // The Index header toggle link should offer the opposite sort direction
-    assert!(html.contains("sort=desc"), "Index header should link to sort=desc when current is asc");
+    assert!(
+        html.contains("sort=desc"),
+        "Index header should link to sort=desc when current is asc"
+    );
     // Should show ascending arrow
-    assert!(html.contains("▲") || html.contains("&#9650;"), "Should show ascending arrow");
+    assert!(
+        html.contains("▲") || html.contains("&#9650;"),
+        "Should show ascending arrow"
+    );
 }

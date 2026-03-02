@@ -81,7 +81,10 @@ pub async fn get(
         Err(e) => {
             tracing::warn!(error = %e, "failed to fetch record status from /api/v0/record");
             errors.push(format!("Record status: {}", e));
-            (std::collections::HashMap::new(), serde_json::Value::default())
+            (
+                std::collections::HashMap::new(),
+                serde_json::Value::default(),
+            )
         }
     };
 
