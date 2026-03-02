@@ -1,4 +1,4 @@
-use atuin_web_lib::error::WebError;
+use atuin_web::error::WebError;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 

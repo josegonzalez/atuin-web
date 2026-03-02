@@ -9,4 +9,4 @@ if [ -f .env ]; then
   set +a
 fi
 
-exec watchexec --restart -e rs,toml,html -- cargo run -p atuin-web -- "${@:---bind 0.0.0.0:5001}"
+exec watchexec --restart -e rs,toml,html -- cargo run -- "${@:---bind 0.0.0.0:5001}"

@@ -1,7 +1,7 @@
 mod common;
 
-use atuin_web_lib::auth;
-use atuin_web_lib::config::Config;
+use atuin_web::auth;
+use atuin_web::config::Config;
 use axum::http::StatusCode;
 use clap::Parser;
 

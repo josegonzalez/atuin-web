@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
-use atuin_web_lib::app::{create_router, AppState};
-use atuin_web_lib::client::AtuinClient;
-use atuin_web_lib::config::Config;
-use atuin_web_lib::templates;
+use atuin_web::app::{create_router, AppState};
+use atuin_web::client::AtuinClient;
+use atuin_web::config::Config;
+use atuin_web::templates;
 use axum::Router;
 use axum_test::TestServerConfig;
 use clap::Parser;

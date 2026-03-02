@@ -1,4 +1,4 @@
-use atuin_web_lib::config::Config;
+use atuin_web::config::Config;
 use clap::Parser;
 
 #[test]

@@ -1,5 +1,5 @@
-use atuin_web_lib::routes::records::PaginationInfo;
-use atuin_web_lib::templates;
+use atuin_web::routes::records::PaginationInfo;
+use atuin_web::templates;
 
 #[test]
 fn test_create_environment() {
