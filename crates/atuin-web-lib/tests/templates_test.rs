@@ -384,6 +384,96 @@ fn test_uuid7_timestamp_filter_empty_input() {
 }
 
 #[test]
+fn test_render_nonexistent_template_returns_error() {
+    let env = templates::create_environment();
+    let result = templates::render(&env, "nonexistent.html", minijinja::context! {});
+    assert!(
+        result.is_err(),
+        "Rendering a nonexistent template should return an error"
+    );
+}
+
+#[test]
+fn test_uuid7_timestamp_filter_non_hex_chars() {
+    let env = templates::create_environment();
+    // 12+ non-dash chars but invalid hex digits
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([{
+                "id": "gggggggggggg-7000-8000-000000000000",
+                "idx": 1,
+                "host": {"id": "host1"},
+                "data": {"data": "", "content_encryption_key": ""},
+                "tag": "history",
+                "version": "v0",
+            }]),
+            pagination => PaginationInfo {
+                current_page: 1,
+                total_pages: 1,
+                total_records: 1,
+                page_size: 25,
+                has_prev: false,
+                has_next: false,
+                prev_page: 1,
+                next_page: 1,
+                page_numbers: vec![1],
+                page_sizes: vec![25, 50, 100],
+            },
+            tag => "history",
+            sort => "desc",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(
+        html.contains("\u{2014}"),
+        "Non-hex UUID should show em-dash fallback"
+    );
+}
+
+#[test]
+fn test_uuid7_timestamp_filter_future_timestamp() {
+    let env = templates::create_environment();
+    // fffffffffff0 hex = ~year 10889, far in the future
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([{
+                "id": "fffffffffff0-7000-8000-000000000000",
+                "idx": 1,
+                "host": {"id": "host1"},
+                "data": {"data": "", "content_encryption_key": ""},
+                "tag": "history",
+                "version": "v0",
+            }]),
+            pagination => PaginationInfo {
+                current_page: 1,
+                total_pages: 1,
+                total_records: 1,
+                page_size: 25,
+                has_prev: false,
+                has_next: false,
+                prev_page: 1,
+                next_page: 1,
+                page_numbers: vec![1],
+                page_sizes: vec![25, 50, 100],
+            },
+            tag => "history",
+            sort => "desc",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(
+        html.contains("\u{2014}"),
+        "Future timestamp should show em-dash fallback"
+    );
+}
+
+#[test]
 fn test_render_pagination_preserves_sort() {
     let env = templates::create_environment();
     let pagination = PaginationInfo {

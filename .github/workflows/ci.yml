@@ -31,6 +31,42 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
 
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install cargo-llvm-cov
+        run: cargo binstall cargo-llvm-cov --no-confirm
+
+      - name: Run tests with coverage
+        run: |
+          cargo llvm-cov --workspace --json --output-path coverage.json
+          echo '## Code Coverage Report' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '| File | Lines | Line % | Functions | Fn % |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|------|------:|-------:|----------:|-----:|' >> "$GITHUB_STEP_SUMMARY"
+          jq -r '
+            .data[0].files[] |
+            .filename as $f |
+            .summary |
+            ($f | ltrimstr("crates/atuin-web-lib/") | ltrimstr("crates/atuin-web/")) as $short |
+            "| \($short) | \(.lines.covered)/\(.lines.count) | \(.lines.percent | . * 10 | round / 10)% | \(.functions.covered)/\(.functions.count) | \(.functions.percent | . * 10 | round / 10)% |"
+          ' coverage.json >> "$GITHUB_STEP_SUMMARY"
+          jq -r '
+            .data[0].totals |
+            "| **Total** | **\(.lines.covered)/\(.lines.count)** | **\(.lines.percent | . * 10 | round / 10)%** | **\(.functions.covered)/\(.functions.count)** | **\(.functions.percent | . * 10 | round / 10)%** |"
+          ' coverage.json >> "$GITHUB_STEP_SUMMARY"
+
   docker-build:
     runs-on: ubuntu-latest
     steps:
