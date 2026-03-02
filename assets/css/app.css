@@ -240,6 +240,15 @@
   border-radius: 4px;
 }
 
+.badge-deleted {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25em 0.5em;
+  border-radius: 4px;
+}
+
 .badge-status-healthy {
   background: rgba(62, 207, 142, 0.15);
   color: var(--brand-accent);

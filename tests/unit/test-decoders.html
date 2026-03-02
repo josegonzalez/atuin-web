@@ -49,6 +49,18 @@
         }
       }
 
+      function assertRecord(name, actual, expectedText, expectedDeleted) {
+        if (typeof actual !== "object" || actual === null) {
+          log(name, false, "Expected object, got: " + JSON.stringify(actual));
+          return;
+        }
+        if (actual.text === expectedText && actual.deleted === expectedDeleted) {
+          log(name, true);
+        } else {
+          log(name, false, "Expected: {text: " + JSON.stringify(expectedText) + ", deleted: " + expectedDeleted + "}\nGot:      {text: " + JSON.stringify(actual.text) + ", deleted: " + actual.deleted + "}");
+        }
+      }
+
       // Helper: build outer msgpack envelope (version + data)
       function buildOuter(version, innerData) {
         var versionBytes = MessagePack.encode(version);
@@ -69,6 +81,29 @@
         return combined;
       }
 
+      // Helper: build history inner data (version + struct as concatenated msgpack)
+      function buildHistoryInner(version, structArray) {
+        var vBytes = MessagePack.encode(version);
+        var sBytes = MessagePack.encode(structArray);
+        var combined = new Uint8Array(vBytes.length + sBytes.length);
+        combined.set(vBytes, 0);
+        combined.set(sBytes, vBytes.length);
+        return combined;
+      }
+
+      // Helper: build raw outer format matching real Atuin encoding
+      // (version + discriminant + data as separate msgpack values, NOT bin-wrapped)
+      function buildRawOuter(version, discriminant, data) {
+        var versionBytes = MessagePack.encode(version);
+        var discBytes = MessagePack.encode(discriminant);
+        var dataBytes = MessagePack.encode(data);
+        var combined = new Uint8Array(versionBytes.length + discBytes.length + dataBytes.length);
+        combined.set(versionBytes, 0);
+        combined.set(discBytes, versionBytes.length);
+        combined.set(dataBytes, versionBytes.length + discBytes.length);
+        return combined;
+      }
+
       var D = window.AtuinDecoders;
 
       // --- KV Tests ---
@@ -82,7 +117,7 @@
         var inner = MessagePack.encode(kvCreate);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("kv", outer);
-        assertEqual("KV Create", result, "default:mykey = myvalue");
+        assertRecord("KV Create", result, "default:mykey = myvalue", false);
       })();
 
       (function() {
@@ -91,7 +126,7 @@
         var inner = MessagePack.encode(kvDelete);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("kv", outer);
-        assertEqual("KV Delete", result, "ns:delkey (deleted)");
+        assertRecord("KV Delete", result, "ns:delkey (deleted)", true);
       })();
 
       (function() {
@@ -104,14 +139,14 @@
           0xc2                                                        // false
         ]);
         var result = D.decodeRecord("kv", truncated);
-        assertEqual("KV Delete (truncated fixarray)", result, "default:baz (deleted)");
+        assertRecord("KV Delete (truncated fixarray)", result, "default:baz (deleted)", true);
       })();
 
       (function() {
         // KV Create as raw array (no version+blob wrapping)
         var raw = MessagePack.encode(["myns", "mykey", true, "hello"]);
         var result = D.decodeRecord("kv", raw);
-        assertEqual("KV Create (raw array, no version wrap)", result, "myns:mykey = hello");
+        assertRecord("KV Create (raw array, no version wrap)", result, "myns:mykey = hello", false);
       })();
 
       // --- Alias Tests ---
@@ -124,7 +159,7 @@
         var inner = buildDiscriminated(0, ["ll", "ls -la"]);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("config-shell-alias", outer);
-        assertEqual("Alias Create", result, "alias ll='ls -la'");
+        assertRecord("Alias Create", result, "alias ll='ls -la'", false);
       })();
 
       (function() {
@@ -132,7 +167,21 @@
         var inner = buildDiscriminated(1, ["ll"]);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("config-shell-alias", outer);
-        assertEqual("Alias Delete", result, "unalias ll");
+        assertRecord("Alias Delete", result, "unalias ll", true);
+      })();
+
+      (function() {
+        // Alias Create (raw format): version + discriminant + data as separate msgpack values
+        var outer = buildRawOuter("v0", 0, ["ll", "ls -la"]);
+        var result = D.decodeRecord("config-shell-alias", outer);
+        assertRecord("Alias Create (raw)", result, "alias ll='ls -la'", false);
+      })();
+
+      (function() {
+        // Alias Delete (raw format): matches real ridx=2 deletion
+        var outer = buildRawOuter("v0", 1, ["ll"]);
+        var result = D.decodeRecord("config-shell-alias", outer);
+        assertRecord("Alias Delete (raw)", result, "unalias ll", true);
       })();
 
       // --- Var Tests ---
@@ -145,7 +194,7 @@
         var inner = buildDiscriminated(0, ["PATH", "/usr/bin", true]);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("dotfiles-var", outer);
-        assertEqual("Var Create (export)", result, "export PATH=/usr/bin");
+        assertRecord("Var Create (export)", result, "export PATH=/usr/bin", false);
       })();
 
       (function() {
@@ -153,7 +202,7 @@
         var inner = buildDiscriminated(0, ["FOO", "bar", false]);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("dotfiles-var", outer);
-        assertEqual("Var Create (no export)", result, "FOO=bar");
+        assertRecord("Var Create (no export)", result, "FOO=bar", false);
       })();
 
       (function() {
@@ -161,7 +210,21 @@
         var inner = buildDiscriminated(1, ["OLD_VAR"]);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("dotfiles-var", outer);
-        assertEqual("Var Delete", result, "unset OLD_VAR");
+        assertRecord("Var Delete", result, "unset OLD_VAR", true);
+      })();
+
+      (function() {
+        // Var Create (raw format): version + discriminant + data as separate msgpack values
+        var outer = buildRawOuter("v0", 0, ["PATH", "/usr/bin", true]);
+        var result = D.decodeRecord("dotfiles-var", outer);
+        assertRecord("Var Create (raw)", result, "export PATH=/usr/bin", false);
+      })();
+
+      (function() {
+        // Var Delete (raw format): matches real ridx=1 deletion
+        var outer = buildRawOuter("v0", 1, ["OLD_VAR"]);
+        var result = D.decodeRecord("dotfiles-var", outer);
+        assertRecord("Var Delete (raw)", result, "unset OLD_VAR", true);
       })();
 
       // --- Script Tests ---
@@ -176,7 +239,7 @@
         var inner = buildDiscriminated(0, scriptBin);
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("script", outer);
-        assertEqual("Script Create", result, "backup \u2014 Daily backup script");
+        assertRecord("Script Create", result, "backup \u2014 Daily backup script", false);
       })();
 
       (function() {
@@ -184,7 +247,72 @@
         var inner = buildDiscriminated(1, "550e8400-e29b-41d4-a716-446655440000");
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("script", outer);
-        assertEqual("Script Delete", result, "delete 550e8400-e29b-41d4-a716-446655440000");
+        assertRecord("Script Delete", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
+      })();
+
+      (function() {
+        // Script Create (raw format): version + discriminant + bin(script array)
+        var scriptArray = ["abc-123", "backup", "Daily backup script", "#!/bin/bash", [], "tar czf backup.tar.gz /data"];
+        var scriptBin = MessagePack.encode(scriptArray);
+        var outer = buildRawOuter("v0", 0, scriptBin);
+        var result = D.decodeRecord("script", outer);
+        assertRecord("Script Create (raw)", result, "backup \u2014 Daily backup script", false);
+      })();
+
+      (function() {
+        // Script Delete (raw format): matches real ridx=1 deletion
+        var outer = buildRawOuter("v0", 1, "550e8400-e29b-41d4-a716-446655440000");
+        var result = D.decodeRecord("script", outer);
+        assertRecord("Script Delete (raw)", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
+      })();
+
+      // --- Real Format Tests (no version prefix, matching PASETO decryption output) ---
+      var h6r = document.createElement("h2");
+      h6r.textContent = "Real Format (no version prefix)";
+      results.appendChild(h6r);
+
+      (function() {
+        // Real alias create: discriminant 0 + [name, value] — no version prefix
+        var bytes = buildDiscriminated(0, ["kl2", "kubectl logs"]);
+        var result = D.decodeRecord("config-shell-alias", bytes);
+        assertRecord("Alias Create (real)", result, "alias kl2='kubectl logs'", false);
+      })();
+
+      (function() {
+        // Real alias delete: discriminant 1 + [name] — no version prefix
+        var bytes = buildDiscriminated(1, ["kl2"]);
+        var result = D.decodeRecord("config-shell-alias", bytes);
+        assertRecord("Alias Delete (real)", result, "unalias kl2", true);
+      })();
+
+      (function() {
+        // Real var create: discriminant 0 + [name, value, export] — no version prefix
+        var bytes = buildDiscriminated(0, ["PATH", "/usr/bin", true]);
+        var result = D.decodeRecord("dotfiles-var", bytes);
+        assertRecord("Var Create (real)", result, "export PATH=/usr/bin", false);
+      })();
+
+      (function() {
+        // Real var delete: discriminant 1 + [name] — no version prefix
+        var bytes = buildDiscriminated(1, ["OLD_VAR"]);
+        var result = D.decodeRecord("dotfiles-var", bytes);
+        assertRecord("Var Delete (real)", result, "unset OLD_VAR", true);
+      })();
+
+      (function() {
+        // Real script create: discriminant 0 + bin(script array) — no version prefix
+        var scriptArray = ["abc-123", "backup", "Daily backup script", "#!/bin/bash", [], "tar czf backup.tar.gz /data"];
+        var scriptBin = MessagePack.encode(scriptArray);
+        var bytes = buildDiscriminated(0, scriptBin);
+        var result = D.decodeRecord("script", bytes);
+        assertRecord("Script Create (real)", result, "backup \u2014 Daily backup script", false);
+      })();
+
+      (function() {
+        // Real script delete: discriminant 1 + str(uuid) — no version prefix
+        var bytes = buildDiscriminated(1, "550e8400-e29b-41d4-a716-446655440000");
+        var result = D.decodeRecord("script", bytes);
+        assertRecord("Script Delete (real)", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
       })();
 
       // --- History Tests ---
@@ -193,12 +321,29 @@
       results.appendChild(h6);
 
       (function() {
-        // History: version + bin(version + array [id, ts, dur, exit, command, cwd, session, hostname, deleted_at])
+        // History Create (real format): discriminant 0 + bin(version + struct array)
+        // No version prefix string — just discriminant_u8 + data
         var histArray = ["id1", 1700000000, 100, 0, "echo hello", "/home/user", "sess1", "myhost", null];
-        var innerBin = buildOuter("v0", histArray);
-        var outer = buildOuter("v0", innerBin);
-        var result = D.decodeRecord("history", outer);
-        assertEqual("History Create", result, "echo hello");
+        var innerBin = buildHistoryInner(0, histArray);
+        var bytes = buildDiscriminated(0, innerBin);
+        var result = D.decodeRecord("history", bytes);
+        assertRecord("History Create", result, "echo hello", false);
+      })();
+
+      (function() {
+        // History Delete (real format): discriminant 1 + str(uuid)
+        var bytes = buildDiscriminated(1, "550e8400-e29b-41d4-a716-446655440000");
+        var result = D.decodeRecord("history", bytes);
+        assertRecord("History Delete", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
+      })();
+
+      (function() {
+        // History Create with non-zero exit code
+        var histArray = ["id2", 1700000100, 50, 1, "false", "/tmp", "sess2", "host2", null];
+        var innerBin = buildHistoryInner(0, histArray);
+        var bytes = buildDiscriminated(0, innerBin);
+        var result = D.decodeRecord("history", bytes);
+        assertRecord("History Create (non-zero exit)", result, "false", false);
       })();
 
       // Summary

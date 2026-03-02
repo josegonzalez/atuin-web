@@ -51,7 +51,15 @@
       }
       if (outer.length === 0) throw e;
     }
-    var blob = outer.length > 1 ? outer[1] : outer[0];
+    // Strip leading version string if present
+    // (History/KV may include version prefix; alias/var/script data has none)
+    var elements = outer;
+    if (elements.length > 0 && typeof elements[0] === "string") {
+      elements = elements.slice(1);
+    }
+
+    // Single remaining element → unwrap; multiple → pass as array
+    var blob = elements.length === 1 ? elements[0] : elements;
 
     switch (tag) {
       case "kv":
@@ -68,23 +76,42 @@
   }
 
   function decodeHistory(blob) {
+    var parts = [];
+    if (Array.isArray(blob)) {
+      parts = blob;
+    } else if (blob instanceof Uint8Array) {
+      for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
+    } else {
+      parts = [blob];
+    }
+
+    var discriminant = (parts.length > 1) ? parts[0] : 0;
+    var data = parts.length > 1 ? parts[1] : parts[0];
+
+    // Delete variant (discriminant 1)
+    if (discriminant === 1) {
+      var deleteId = (typeof data === "string") ? data : JSON.stringify(data);
+      return {text: "delete " + deleteId, deleted: true};
+    }
+
+    // Create variant (discriminant 0) — data is Uint8Array containing version + struct
     var decoded;
-    if (blob instanceof Uint8Array) {
+    if (data instanceof Uint8Array) {
       var inner = [];
-      for (var iv of MessagePack.decodeMulti(blob)) inner.push(iv);
+      for (var iv of MessagePack.decodeMulti(data)) inner.push(iv);
       decoded = inner.length > 1 ? inner[inner.length - 1] : inner[0];
     } else {
-      decoded = blob;
+      decoded = data;
     }
 
     if (decoded && decoded.command) {
-      return decoded.command;
+      return {text: decoded.command, deleted: false};
     } else if (Array.isArray(decoded)) {
       // rmp_serde compact format: struct as array
       // History: [id, timestamp, duration, exit, command, cwd, session, hostname, deleted_at]
-      return decoded[4] || JSON.stringify(decoded);
+      return {text: decoded[4] || JSON.stringify(decoded), deleted: false};
     }
-    return JSON.stringify(decoded);
+    return {text: JSON.stringify(decoded), deleted: false};
   }
 
   function decodeKv(blob) {
@@ -105,17 +132,20 @@
         if (val instanceof Uint8Array) {
           val = new TextDecoder().decode(val);
         }
-        return ns + ":" + key + " = " + val;
+        return {text: ns + ":" + key + " = " + val, deleted: false};
       }
-      return ns + ":" + key + " (deleted)";
+      return {text: ns + ":" + key + " (deleted)", deleted: true};
     }
-    return JSON.stringify(decoded);
+    return {text: JSON.stringify(decoded), deleted: false};
   }
 
   function decodeAlias(blob) {
     // Alias: u8(discriminant) + Create: array(2)[name, value], Delete: array(1)[name]
     var parts = [];
-    if (blob instanceof Uint8Array) {
+    if (Array.isArray(blob)) {
+      // Pre-split from decodeRecord (raw outer format: 3+ elements)
+      parts = blob;
+    } else if (blob instanceof Uint8Array) {
       for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
     } else {
       parts = [blob];
@@ -125,17 +155,19 @@
     var data = parts.length > 1 ? parts[1] : parts[0];
 
     if (discriminant === 0 && Array.isArray(data) && data.length >= 2) {
-      return "alias " + data[0] + "='" + data[1] + "'";
+      return {text: "alias " + data[0] + "='" + data[1] + "'", deleted: false};
     } else if (discriminant === 1 && Array.isArray(data) && data.length >= 1) {
-      return "unalias " + data[0];
+      return {text: "unalias " + data[0], deleted: true};
     }
-    return JSON.stringify(data);
+    return {text: JSON.stringify(data), deleted: false};
   }
 
   function decodeVar(blob) {
     // Var: u8(discriminant) + Create: array(3)[name, value, export], Delete: array(1)[name]
     var parts = [];
-    if (blob instanceof Uint8Array) {
+    if (Array.isArray(blob)) {
+      parts = blob;
+    } else if (blob instanceof Uint8Array) {
       for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
     } else {
       parts = [blob];
@@ -149,20 +181,22 @@
       var value = data[1];
       var isExport = data[2];
       if (isExport) {
-        return "export " + name + "=" + value;
+        return {text: "export " + name + "=" + value, deleted: false};
       }
-      return name + "=" + value;
+      return {text: name + "=" + value, deleted: false};
     } else if (discriminant === 1 && Array.isArray(data) && data.length >= 1) {
-      return "unset " + data[0];
+      return {text: "unset " + data[0], deleted: true};
     }
-    return JSON.stringify(data);
+    return {text: JSON.stringify(data), deleted: false};
   }
 
   function decodeScript(blob) {
     // Script: u8(discriminant) + Create/Update: bin(array(6)[id,name,desc,shebang,tags,script]),
     //                            Delete: str(uuid)
     var parts = [];
-    if (blob instanceof Uint8Array) {
+    if (Array.isArray(blob)) {
+      parts = blob;
+    } else if (blob instanceof Uint8Array) {
       for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
     } else {
       parts = [blob];
@@ -177,13 +211,13 @@
       if (Array.isArray(scriptData) && scriptData.length >= 3) {
         var name = scriptData[1] || "";
         var desc = scriptData[2] || "";
-        return name + (desc ? " \u2014 " + desc : "");
+        return {text: name + (desc ? " \u2014 " + desc : ""), deleted: false};
       }
-      return JSON.stringify(scriptData);
+      return {text: JSON.stringify(scriptData), deleted: false};
     } else if (discriminant === 1 && typeof data === "string") {
-      return "delete " + data;
+      return {text: "delete " + data, deleted: true};
     }
-    return JSON.stringify(data);
+    return {text: JSON.stringify(data), deleted: false};
   }
 
   // Expose decoders for testing
@@ -262,12 +296,14 @@
           // Outer: msgpack(version) + msgpack(bin/data)
           // Use decodeMulti at each level since decode() throws on extra bytes.
           var rtag = el.getAttribute("data-rtag") || "";
-          var display;
+          var result;
           if (typeof MessagePack !== "undefined") {
-            display = decodeRecord(rtag, innerBytes);
+            result = decodeRecord(rtag, innerBytes);
           } else {
-            display = new TextDecoder().decode(innerBytes);
+            result = {text: new TextDecoder().decode(innerBytes), deleted: false};
           }
+          var display = (typeof result === "object") ? result.text : result;
+          var isDeleted = (typeof result === "object") ? result.deleted : false;
 
           el.innerHTML = "";
           var wrapper = document.createElement("span");
@@ -278,6 +314,12 @@
           code.className = "font-mono";
           code.textContent = display;
           wrapper.appendChild(code);
+          if (isDeleted) {
+            var badge = document.createElement("span");
+            badge.className = "badge badge-deleted ms-2";
+            badge.textContent = "deleted";
+            wrapper.appendChild(badge);
+          }
           wrapper.addEventListener("click", function() {
             navigator.clipboard.writeText(display).then(function() {
               var toastEl = document.getElementById("copyToast");

@@ -13,13 +13,16 @@ pub async fn serve_asset(
 
     let mime = mime_guess::from_path(&path).first_or_octet_stream();
 
+    let cache_control = if cfg!(debug_assertions) {
+        "no-cache".to_string()
+    } else {
+        "public, max-age=31536000, immutable".to_string()
+    };
+
     Ok((
         [
             (header::CONTENT_TYPE, mime.as_ref().to_string()),
-            (
-                header::CACHE_CONTROL,
-                "public, max-age=31536000, immutable".to_string(),
-            ),
+            (header::CACHE_CONTROL, cache_control),
         ],
         file.data,
     )
