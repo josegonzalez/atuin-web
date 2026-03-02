@@ -4,6 +4,7 @@ resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
+license = "MIT"
 
 [workspace.dependencies]
 axum = "0.8"
