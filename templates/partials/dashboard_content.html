@@ -22,20 +22,20 @@
 </div>
 
 {% if errors and errors | length > 0 %}
-<div class="card mb-4" style="border-color: rgba(239, 68, 68, 0.3);">
+<div class="card mb-4 card-error">
   <div class="card-header">
     <span class="badge badge-status-error me-2">Connection Error</span>
     Unable to reach atuin server
   </div>
   <div class="card-body">
-    <ul class="mb-3" style="font-size: 0.875rem;">
+    <ul class="mb-3 error-list">
       {% for error in errors %}
       <li class="text-secondary">{{ error }}</li>
       {% endfor %}
     </ul>
     <details>
-      <summary class="text-secondary" style="font-size: 0.8125rem; cursor: pointer;">Troubleshooting</summary>
-      <ul class="mt-2" style="font-size: 0.8125rem;">
+      <summary class="text-secondary troubleshooting-summary">Troubleshooting</summary>
+      <ul class="mt-2 troubleshooting-list">
         <li>Verify the server is running at the configured URL</li>
         <li>Check <code>--atuin-server-url</code> / <code>ATUIN_WEB_SERVER_URL</code></li>
         <li>Ensure no firewall is blocking the connection</li>
@@ -63,7 +63,7 @@
           {% for host_id, tags in status.hosts | items %}
             {% for tag, count in tags | items %}
             <tr>
-              <td class="font-mono" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ host_id }}">{{ host_id }}</td>
+              <td class="font-mono cell-truncate" title="{{ host_id }}">{{ host_id }}</td>
               <td class="font-mono"><a href="/records?tag={{ tag }}">{{ tag }}</a></td>
               <td class="font-mono">{{ count + 1 }}</td>
             </tr>
