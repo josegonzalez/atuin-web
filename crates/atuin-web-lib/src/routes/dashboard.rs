@@ -44,7 +44,7 @@ pub async fn get(
         }
         Err(e) => {
             tracing::warn!(error = %e, "failed to reach atuin server healthz endpoint");
-            errors.push(format!("Health check: {}", e));
+            errors.push("Failed to reach server health endpoint".to_string());
             String::new()
         }
     };
@@ -53,7 +53,7 @@ pub async fn get(
         Ok(v) => v,
         Err(e) => {
             tracing::warn!(error = %e, "failed to fetch user info from /api/v0/me");
-            errors.push(format!("User info: {}", e));
+            errors.push("Failed to fetch user info".to_string());
             serde_json::Value::default()
         }
     };
@@ -80,7 +80,7 @@ pub async fn get(
         }
         Err(e) => {
             tracing::warn!(error = %e, "failed to fetch record status from /api/v0/record");
-            errors.push(format!("Record status: {}", e));
+            errors.push("Failed to fetch record status".to_string());
             (
                 std::collections::HashMap::new(),
                 serde_json::Value::default(),
@@ -108,7 +108,6 @@ pub async fn get(
             status => status,
             health => health,
             errors => errors,
-            server_url => state.config.atuin_server_url,
             active_page => "dashboard",
             tag => "",
             has_config_token => state.config.token.is_some(),

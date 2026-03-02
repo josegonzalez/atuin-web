@@ -31,6 +31,12 @@ impl IntoResponse for WebError {
 
         tracing::error!(%status, error = %self);
 
-        (status, self.to_string()).into_response()
+        let message = match &self {
+            WebError::Upstream(_) => "An upstream service error occurred".to_string(),
+            WebError::Template(_) => "An internal error occurred".to_string(),
+            _ => self.to_string(),
+        };
+
+        (status, message).into_response()
     }
 }

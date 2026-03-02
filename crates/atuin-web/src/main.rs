@@ -25,6 +25,14 @@ async fn main() {
 
     if config.token.is_some() {
         tracing::info!("Using pre-configured auth token");
+
+        let bind_host = config.bind.split(':').next().unwrap_or("");
+        if bind_host != "127.0.0.1" && bind_host != "localhost" && bind_host != "::1" {
+            tracing::warn!(
+                "Config token is set with non-localhost bind address '{}'; all visitors will have unauthenticated access",
+                config.bind
+            );
+        }
     }
 
     let session_store = MemoryStore::default();
@@ -33,7 +41,8 @@ async fn main() {
             config.session_expiry as i64,
         )))
         .with_http_only(true)
-        .with_same_site(tower_sessions::cookie::SameSite::Lax);
+        .with_same_site(tower_sessions::cookie::SameSite::Lax)
+        .with_secure(config.secure_cookies);
 
     let client = AtuinClient::new(&config.atuin_server_url);
     let env = templates::create_environment();

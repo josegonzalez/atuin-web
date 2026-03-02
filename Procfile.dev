@@ -1,1 +1,1 @@
-web: watchexec --restart -e rs,toml,html --stop-timeout 0 -- cargo run -p atuin-web -- --bind "0.0.0.0:5001"
+web: watchexec --restart -e rs,toml,html --stop-timeout 0 -- cargo run -p atuin-web -- --bind "127.0.0.1:5001"

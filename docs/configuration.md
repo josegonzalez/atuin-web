@@ -9,6 +9,7 @@ All options can be set via CLI args or environment variables. CLI args take prec
 | `--token` | `ATUIN_WEB_TOKEN` | (none) | Pre-configured auth token |
 | `--session-expiry` | `ATUIN_WEB_SESSION_EXPIRY` | `86400` | Session TTL (seconds) |
 | `--log-level` | `ATUIN_WEB_LOG_LEVEL` | `info` | Log level |
+| `--secure-cookies` | `ATUIN_WEB_SECURE_COOKIES` | `false` | Set Secure flag on cookies (enable behind HTTPS) |
 
 ## Example .env
 
@@ -18,6 +19,10 @@ ATUIN_WEB_SERVER_URL=http://localhost:8888
 ATUIN_WEB_TOKEN=your-session-token
 ATUIN_WEB_LOG_LEVEL=info
 ```
+
+## Upstream Request Timeouts
+
+All HTTP requests to the upstream atuin server have a 30-second request timeout and a 10-second connection timeout. These are not currently configurable.
 
 ## Getting Your Auth Token
 

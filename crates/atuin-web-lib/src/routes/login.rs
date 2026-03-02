@@ -41,6 +41,9 @@ pub async fn post(
             auth::set_session_token(&session, &token)
                 .await
                 .map_err(|_| WebError::BadRequest("Failed to store session".into()))?;
+            session.cycle_id().await.map_err(|_| {
+                WebError::BadRequest("Failed to regenerate session".into())
+            })?;
             Ok(Redirect::to("/").into_response())
         }
         Err(_) => {

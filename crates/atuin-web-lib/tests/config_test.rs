@@ -9,6 +9,7 @@ fn test_default_config() {
     assert!(config.token.is_none());
     assert_eq!(config.session_expiry, 86400);
     assert_eq!(config.log_level, "info");
+    assert!(!config.secure_cookies);
 }
 
 #[test]
@@ -25,10 +26,12 @@ fn test_config_with_args() {
         "3600",
         "--log-level",
         "debug",
+        "--secure-cookies",
     ]);
     assert_eq!(config.bind, "0.0.0.0:9090");
     assert_eq!(config.atuin_server_url, "http://remote:8888");
     assert_eq!(config.token, Some("test-token-123".to_string()));
     assert_eq!(config.session_expiry, 3600);
     assert_eq!(config.log_level, "debug");
+    assert!(config.secure_cookies);
 }

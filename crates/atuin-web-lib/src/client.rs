@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use reqwest::Client;
 use serde_json::Value;
 use tracing::debug;
@@ -13,7 +15,11 @@ pub struct AtuinClient {
 impl AtuinClient {
     pub fn new(base_url: &str) -> Self {
         Self {
-            http: Client::new(),
+            http: Client::builder()
+                .timeout(Duration::from_secs(30))
+                .connect_timeout(Duration::from_secs(10))
+                .build()
+                .expect("failed to build HTTP client"),
             base_url: base_url.trim_end_matches('/').to_string(),
         }
     }

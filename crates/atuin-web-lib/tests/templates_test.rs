@@ -256,7 +256,6 @@ fn test_render_dashboard_with_counts() {
             status => serde_json::json!({"hosts": {}}),
             health => "Ok",
             errors => Vec::<String>::new(),
-            server_url => "http://localhost:8888",
             tag => "",
         },
     );

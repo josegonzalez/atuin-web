@@ -26,4 +26,8 @@ pub struct Config {
     /// Log level
     #[arg(long, env = "ATUIN_WEB_LOG_LEVEL", default_value = "info")]
     pub log_level: String,
+
+    /// Set Secure flag on session cookies (enable when behind HTTPS)
+    #[arg(long, env = "ATUIN_WEB_SECURE_COOKIES", default_value = "false")]
+    pub secure_cookies: bool,
 }
