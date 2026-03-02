@@ -5,33 +5,41 @@
   var STORAGE_KEY = "atuin-web-theme";
 
   function getPreferredTheme() {
-    var stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return stored;
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    return localStorage.getItem(STORAGE_KEY) || "system";
   }
 
-  function setTheme(theme) {
-    document.documentElement.setAttribute("data-bs-theme", theme);
-    localStorage.setItem(STORAGE_KEY, theme);
-    updateIcons(theme);
+  function resolveTheme(pref) {
+    if (pref === "system") {
+      return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    return pref;
   }
 
-  function updateIcons(theme) {
+  function applyTheme(pref) {
+    localStorage.setItem(STORAGE_KEY, pref);
+    document.documentElement.setAttribute("data-bs-theme", resolveTheme(pref));
+    updateIcons(pref);
+  }
+
+  function updateIcons(pref) {
     var sun = document.getElementById("theme-icon-sun");
     var moon = document.getElementById("theme-icon-moon");
-    if (sun && moon) {
-      sun.style.display = theme === "dark" ? "none" : "block";
-      moon.style.display = theme === "dark" ? "block" : "none";
+    var system = document.getElementById("theme-icon-system");
+    if (sun && moon && system) {
+      sun.style.display = pref === "light" ? "block" : "none";
+      moon.style.display = pref === "dark" ? "block" : "none";
+      system.style.display = pref === "system" ? "block" : "none";
     }
   }
 
   // Apply theme immediately to prevent flash
-  setTheme(getPreferredTheme());
+  applyTheme(getPreferredTheme());
 
-  // Expose toggle function globally
+  // Expose toggle function globally: dark → light → system → dark
   window.toggleTheme = function() {
-    var current = document.documentElement.getAttribute("data-bs-theme");
-    setTheme(current === "dark" ? "light" : "dark");
+    var pref = getPreferredTheme();
+    var next = pref === "dark" ? "light" : pref === "light" ? "system" : "dark";
+    applyTheme(next);
   };
 
   // Update icons after DOM loads
@@ -41,10 +49,10 @@
     });
   }
 
-  // Listen for system theme changes
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e) {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setTheme(e.matches ? "dark" : "light");
+  // Listen for system theme changes — only act when preference is "system"
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function() {
+    if (getPreferredTheme() === "system") {
+      applyTheme("system");
     }
   });
 })();
