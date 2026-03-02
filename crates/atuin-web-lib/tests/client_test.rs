@@ -1,6 +1,8 @@
 use atuin_web_lib::client::AtuinClient;
 use atuin_web_lib::error::WebError;
 
+const TEST_PASSWORD: &str = "test-password";
+
 #[tokio::test]
 async fn test_client_creation() {
     let client = AtuinClient::new("http://localhost:8888");
@@ -46,7 +48,7 @@ async fn test_login_success() {
         .await;
 
     let client = AtuinClient::new(&server.url());
-    let result = client.login("user", "pass").await;
+    let result = client.login("user", TEST_PASSWORD).await;
     assert_eq!(result.unwrap(), "tok123");
 }
 
