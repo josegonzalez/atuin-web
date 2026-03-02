@@ -4,6 +4,7 @@ Web UI routes and their corresponding atuin API endpoints.
 
 | Web UI Route | Atuin API Endpoint(s) | Auth | Notes |
 |---|---|---|---|
+| `GET /healthz` | — | No | Health check endpoint; returns `{"status": "ok"}` |
 | `GET /login` | — | No | Login form |
 | `POST /login` | `POST /login` | No | Get session token |
 | `POST /logout` | — | Yes | Clear session |

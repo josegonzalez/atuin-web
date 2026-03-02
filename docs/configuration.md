@@ -10,6 +10,7 @@ All options can be set via CLI args or environment variables. CLI args take prec
 | `--session-expiry` | `ATUIN_WEB_SESSION_EXPIRY` | `86400` | Session TTL (seconds) |
 | `--log-level` | `ATUIN_WEB_LOG_LEVEL` | `info` | Log level |
 | `--secure-cookies` | `ATUIN_WEB_SECURE_COOKIES` | `false` | Set Secure flag on cookies (enable behind HTTPS) |
+| `--healthcheck` | — | `false` | Probe `GET /healthz` and exit 0/1; used by Docker HEALTHCHECK |
 
 ## Example .env
 

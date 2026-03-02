@@ -14,7 +14,7 @@ async fn main() {
     let config = Config::parse();
 
     if config.healthcheck {
-        let url = format!("http://{}/login", config.bind);
+        let url = format!("http://{}/healthz", config.bind);
         let ok = reqwest::get(&url)
             .await
             .is_ok_and(|r| r.status().is_success());
