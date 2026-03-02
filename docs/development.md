@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Rust 1.75+
+- Rust (stable channel; see rust-toolchain.toml)
 - A running atuin server instance
 
 ## Build
