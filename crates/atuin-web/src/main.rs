@@ -13,6 +13,14 @@ use tower_sessions_memory_store::MemoryStore;
 async fn main() {
     let config = Config::parse();
 
+    if config.healthcheck {
+        let url = format!("http://{}/login", config.bind);
+        let ok = reqwest::get(&url)
+            .await
+            .is_ok_and(|r| r.status().is_success());
+        std::process::exit(if ok { 0 } else { 1 });
+    }
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()

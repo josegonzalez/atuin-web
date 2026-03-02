@@ -1,2 +1,11 @@
 /.env
 /target
+/.git
+/.github
+/.claude
+/docs
+/tests
+/bin
+*.md
+Procfile*
+.gitignore

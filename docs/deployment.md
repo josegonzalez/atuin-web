@@ -12,20 +12,26 @@ cargo build --release
 ## Docker
 
 ```dockerfile
-FROM rust:1.93.1-alpine AS builder
+FROM rust:1.93.1-alpine AS chef
 RUN apk add --no-cache musl-dev
+RUN cargo install cargo-chef --locked
 WORKDIR /app
+
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
-FROM alpine:3.21
-RUN apk add --no-cache ca-certificates curl \
-    && adduser -D -u 1000 -s /sbin/nologin atuin-web
+FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=builder /app/target/release/atuin-web /usr/local/bin/
-USER atuin-web
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://127.0.0.1:8080/login || exit 1
+    CMD ["/usr/local/bin/atuin-web", "--healthcheck"]
 CMD ["atuin-web"]
 ```
 

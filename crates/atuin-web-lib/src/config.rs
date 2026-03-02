@@ -30,4 +30,8 @@ pub struct Config {
     /// Set Secure flag on session cookies (enable when behind HTTPS)
     #[arg(long, env = "ATUIN_WEB_SECURE_COOKIES", default_value = "false")]
     pub secure_cookies: bool,
+
+    /// Run a health check against the bind address and exit
+    #[arg(long)]
+    pub healthcheck: bool,
 }
