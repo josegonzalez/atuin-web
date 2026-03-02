@@ -1,11 +1,12 @@
-FROM rust:1.93.1 AS builder
+FROM rust:1.93.1-alpine AS builder
+RUN apk add --no-cache musl-dev
 WORKDIR /app
 COPY . .
 RUN cargo build --release
 
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/* \
-    && useradd -r -u 1000 -s /usr/sbin/nologin atuin-web
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates curl \
+    && adduser -D -u 1000 -s /sbin/nologin atuin-web
 COPY --from=builder /app/target/release/atuin-web /usr/local/bin/
 USER atuin-web
 EXPOSE 8080
