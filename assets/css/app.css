@@ -527,3 +527,18 @@
 .border-strong {
   border-color: var(--border-strong) !important;
 }
+
+/* ===== Script Detail Row ===== */
+.script-detail-row > td {
+  background: var(--surface-200);
+}
+
+.script-toggle {
+  font-size: 0.75rem;
+  color: var(--bs-tertiary-color);
+  user-select: none;
+}
+
+.script-toggle:hover {
+  color: var(--bs-body-color);
+}

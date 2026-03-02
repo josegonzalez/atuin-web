@@ -240,6 +240,11 @@
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("script", outer);
         assertRecord("Script Create", result, "backup \u2014 Daily backup script", false);
+        assertEqual("Script Create .script.name", result.script.name, "backup");
+        assertEqual("Script Create .script.description", result.script.description, "Daily backup script");
+        assertEqual("Script Create .script.shebang", result.script.shebang, "#!/bin/bash");
+        assertEqual("Script Create .script.body", result.script.body, "tar czf backup.tar.gz /data");
+        assertEqual("Script Create .script.tags length", result.script.tags.length, 0);
       })();
 
       (function() {
@@ -248,6 +253,7 @@
         var outer = buildOuter("v0", inner);
         var result = D.decodeRecord("script", outer);
         assertRecord("Script Delete", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
+        assertEqual("Script Delete has no .script", result.script, undefined);
       })();
 
       (function() {
@@ -257,6 +263,21 @@
         var outer = buildRawOuter("v0", 0, scriptBin);
         var result = D.decodeRecord("script", outer);
         assertRecord("Script Create (raw)", result, "backup \u2014 Daily backup script", false);
+        assertEqual("Script Create (raw) .script.body", result.script.body, "tar czf backup.tar.gz /data");
+      })();
+
+      (function() {
+        // Script Create with tags
+        var scriptArray = ["def-456", "deploy", "Deploy to prod", "#!/bin/sh", ["devops", "prod"], "kubectl apply -f deploy.yaml"];
+        var scriptBin = MessagePack.encode(scriptArray);
+        var inner = buildDiscriminated(0, scriptBin);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("script", outer);
+        assertRecord("Script Create (with tags)", result, "deploy \u2014 Deploy to prod", false);
+        assertEqual("Script Create (with tags) .script.tags[0]", result.script.tags[0], "devops");
+        assertEqual("Script Create (with tags) .script.tags[1]", result.script.tags[1], "prod");
+        assertEqual("Script Create (with tags) .script.tags length", result.script.tags.length, 2);
+        assertEqual("Script Create (with tags) .script.shebang", result.script.shebang, "#!/bin/sh");
       })();
 
       (function() {
@@ -264,6 +285,7 @@
         var outer = buildRawOuter("v0", 1, "550e8400-e29b-41d4-a716-446655440000");
         var result = D.decodeRecord("script", outer);
         assertRecord("Script Delete (raw)", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
+        assertEqual("Script Delete (raw) has no .script", result.script, undefined);
       })();
 
       // --- Real Format Tests (no version prefix, matching PASETO decryption output) ---
@@ -306,6 +328,8 @@
         var bytes = buildDiscriminated(0, scriptBin);
         var result = D.decodeRecord("script", bytes);
         assertRecord("Script Create (real)", result, "backup \u2014 Daily backup script", false);
+        assertEqual("Script Create (real) .script.name", result.script.name, "backup");
+        assertEqual("Script Create (real) .script.body", result.script.body, "tar czf backup.tar.gz /data");
       })();
 
       (function() {
@@ -313,6 +337,7 @@
         var bytes = buildDiscriminated(1, "550e8400-e29b-41d4-a716-446655440000");
         var result = D.decodeRecord("script", bytes);
         assertRecord("Script Delete (real)", result, "delete 550e8400-e29b-41d4-a716-446655440000", true);
+        assertEqual("Script Delete (real) has no .script", result.script, undefined);
       })();
 
       // --- History Tests ---

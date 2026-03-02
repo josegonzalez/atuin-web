@@ -211,7 +211,14 @@
       if (Array.isArray(scriptData) && scriptData.length >= 3) {
         var name = scriptData[1] || "";
         var desc = scriptData[2] || "";
-        return {text: name + (desc ? " \u2014 " + desc : ""), deleted: false};
+        var shebang = scriptData.length > 3 ? (scriptData[3] || "") : "";
+        var tags = scriptData.length > 4 ? (scriptData[4] || []) : [];
+        var scriptBody = scriptData.length > 5 ? (scriptData[5] || "") : "";
+        return {
+          text: name + (desc ? " \u2014 " + desc : ""),
+          deleted: false,
+          script: { name: name, description: desc, shebang: shebang, tags: tags, body: scriptBody }
+        };
       }
       return {text: JSON.stringify(scriptData), deleted: false};
     } else if (discriminant === 1 && typeof data === "string") {
@@ -320,16 +327,136 @@
             badge.textContent = "deleted";
             wrapper.appendChild(badge);
           }
-          wrapper.addEventListener("click", function() {
-            navigator.clipboard.writeText(display).then(function() {
+          var copyRef = {text: display};
+          var wrapperClickFn = function() {
+            navigator.clipboard.writeText(copyRef.text).then(function() {
               var toastEl = document.getElementById("copyToast");
               if (toastEl) {
                 var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
                 toast.show();
               }
             });
-          });
+          };
+          wrapper.addEventListener("click", function() { wrapperClickFn(); });
           el.appendChild(wrapper);
+
+          // Expandable detail row for script records
+          if (result && result.script && result.script.body) {
+            var parentRow = el.closest("tr");
+            if (parentRow) {
+              // Clean up any existing detail row (handles htmx re-swaps)
+              var nextRow = parentRow.nextElementSibling;
+              if (nextRow && nextRow.hasAttribute("data-script-detail")) {
+                nextRow.parentNode.removeChild(nextRow);
+              }
+
+              // Add chevron toggle before the wrapper content
+              var chevron = document.createElement("span");
+              chevron.className = "script-toggle";
+              chevron.textContent = "\u25B6";
+              chevron.title = "Show script details";
+              chevron.style.cursor = "pointer";
+              chevron.style.marginRight = "6px";
+              chevron.style.display = "inline-block";
+              chevron.style.transition = "transform 0.15s ease";
+              el.insertBefore(chevron, wrapper);
+
+              // Add tag badges after the wrapper
+              var scriptTags = result.script.tags;
+              if (Array.isArray(scriptTags) && scriptTags.length > 0) {
+                for (var ti = 0; ti < scriptTags.length; ti++) {
+                  var tagBadge = document.createElement("span");
+                  tagBadge.className = "badge bg-secondary ms-1";
+                  tagBadge.style.fontSize = "0.7rem";
+                  tagBadge.textContent = scriptTags[ti];
+                  el.appendChild(tagBadge);
+                }
+              }
+
+              // Build detail sub-row
+              var detailRow = document.createElement("tr");
+              detailRow.setAttribute("data-script-detail", "true");
+              detailRow.className = "script-detail-row";
+
+              var detailCell = document.createElement("td");
+              detailCell.setAttribute("colspan", "4");
+              detailCell.style.padding = "0";
+              detailCell.style.borderBottom = "1px solid var(--bs-border-color)";
+
+              var detailContent = document.createElement("div");
+              detailContent.className = "script-detail-content";
+              detailContent.style.display = "none";
+              detailContent.style.padding = "0.75rem 1rem";
+              detailContent.style.background = "var(--surface-200)";
+
+              // Shebang line
+              if (result.script.shebang) {
+                var shebangEl = document.createElement("div");
+                shebangEl.style.fontSize = "0.75rem";
+                shebangEl.style.color = "var(--bs-tertiary-color)";
+                shebangEl.style.marginBottom = "0.5rem";
+                shebangEl.textContent = result.script.shebang;
+                detailContent.appendChild(shebangEl);
+              }
+
+              // Script body
+              var pre = document.createElement("pre");
+              pre.style.maxHeight = "300px";
+              pre.style.overflow = "auto";
+              pre.style.margin = "0";
+              pre.style.background = "var(--surface-100)";
+              pre.style.border = "1px solid var(--bs-border-color)";
+              pre.style.borderRadius = "4px";
+              pre.style.padding = "0.75rem";
+              var bodyCode = document.createElement("code");
+              bodyCode.className = "font-mono";
+              bodyCode.textContent = result.script.body;
+              pre.appendChild(bodyCode);
+              detailContent.appendChild(pre);
+
+              // Copy button
+              var copyBtn = document.createElement("button");
+              copyBtn.className = "btn btn-sm btn-outline-secondary mt-2";
+              copyBtn.textContent = "Copy script";
+              copyBtn.style.fontSize = "0.75rem";
+              var scriptBodyText = result.script.body;
+              copyBtn.addEventListener("click", function() {
+                navigator.clipboard.writeText(scriptBodyText).then(function() {
+                  var toastEl = document.getElementById("copyToast");
+                  if (toastEl) {
+                    var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                    toast.show();
+                  }
+                });
+              });
+              detailContent.appendChild(copyBtn);
+
+              detailCell.appendChild(detailContent);
+              detailRow.appendChild(detailCell);
+              parentRow.parentNode.insertBefore(detailRow, parentRow.nextSibling);
+
+              // Toggle expand/collapse
+              var toggleDetail = function() {
+                if (detailContent.style.display === "none") {
+                  detailContent.style.display = "block";
+                  chevron.textContent = "\u25BC";
+                  chevron.title = "Hide script details";
+                } else {
+                  detailContent.style.display = "none";
+                  chevron.textContent = "\u25B6";
+                  chevron.title = "Show script details";
+                }
+              };
+              chevron.addEventListener("click", function(e) {
+                e.stopPropagation();
+                toggleDetail();
+              });
+
+              // Override wrapper click to toggle instead of copy
+              wrapperClickFn = toggleDetail;
+              wrapper.title = "Click to expand";
+            }
+          }
         } catch (e) {
           console.warn("Record decryption/decode failed:", e);
 
