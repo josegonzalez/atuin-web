@@ -20,3 +20,4 @@ minijinja-autoreload = "2"
 rust-embed = { version = "8", features = ["mime-guess"] }
 clap = { version = "4", features = ["derive", "env"] }
 mime_guess = "2"
+humantime = "2"

@@ -253,3 +253,110 @@ fn test_render_dashboard_with_counts() {
     assert!(html.contains("/records?tag=dotfiles-var"));
     assert!(html.contains("/records?tag=script"));
 }
+
+#[test]
+fn test_uuid7_timestamp_filter() {
+    let env = templates::create_environment();
+    // UUIDv7 encoding 2024-01-15 14:30:05 UTC (1705325405000 ms)
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([{
+                "id": "018d0d50-a348-7000-8000-000000000000",
+                "idx": 42,
+                "host": {"id": "host1"},
+                "data": {"data": "", "content_encryption_key": ""},
+                "tag": "history",
+                "version": "v0",
+            }]),
+            pagination => PaginationInfo {
+                current_page: 1,
+                total_pages: 1,
+                total_records: 1,
+                page_size: 25,
+                has_prev: false,
+                has_next: false,
+                prev_page: 1,
+                next_page: 1,
+                page_numbers: vec![1],
+                page_sizes: vec![25, 50, 100],
+            },
+            tag => "history",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains(" ago"), "Should show relative duration, got: {}", html);
+    assert!(html.contains(">42<") || html.contains("> 42 <") || html.contains(">\n                42\n"), "Should show idx 42");
+}
+
+#[test]
+fn test_uuid7_timestamp_filter_invalid_input() {
+    let env = templates::create_environment();
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([{
+                "id": "not-a-uuid",
+                "idx": 1,
+                "host": {"id": "host1"},
+                "data": {"data": "", "content_encryption_key": ""},
+                "tag": "history",
+                "version": "v0",
+            }]),
+            pagination => PaginationInfo {
+                current_page: 1,
+                total_pages: 1,
+                total_records: 1,
+                page_size: 25,
+                has_prev: false,
+                has_next: false,
+                prev_page: 1,
+                next_page: 1,
+                page_numbers: vec![1],
+                page_sizes: vec![25, 50, 100],
+            },
+            tag => "history",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("\u{2014}"), "Invalid UUID should show em-dash fallback");
+}
+
+#[test]
+fn test_uuid7_timestamp_filter_empty_input() {
+    let env = templates::create_environment();
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([{
+                "id": "",
+                "idx": 1,
+                "host": {"id": "host1"},
+                "data": {"data": "", "content_encryption_key": ""},
+                "tag": "history",
+                "version": "v0",
+            }]),
+            pagination => PaginationInfo {
+                current_page: 1,
+                total_pages: 1,
+                total_records: 1,
+                page_size: 25,
+                has_prev: false,
+                has_next: false,
+                prev_page: 1,
+                next_page: 1,
+                page_numbers: vec![1],
+                page_sizes: vec![25, 50, 100],
+            },
+            tag => "history",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("\u{2014}"), "Empty string should show em-dash fallback");
+}

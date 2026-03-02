@@ -23,6 +23,7 @@ minijinja-autoreload = { workspace = true }
 rust-embed = { workspace = true }
 clap = { workspace = true }
 mime_guess = { workspace = true }
+humantime = { workspace = true }
 
 [dev-dependencies]
 axum-test = "16"

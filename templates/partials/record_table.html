@@ -4,7 +4,8 @@
       <table class="table table-hover mb-0">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Index</th>
+            <th>Created</th>
             <th>Host</th>
             <th>Data</th>
           </tr>
@@ -13,8 +14,11 @@
           {% if next is iterable %}
             {% for record in next %}
             <tr>
-              <td class="font-mono" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ record.id | default('') }}">
-                {{ record.id | default("—") }}
+              <td class="font-mono">
+                {{ record.idx | default("—") }}
+              </td>
+              <td class="font-mono text-nowrap">
+                {{ record.id | default("") | uuid7_timestamp }}
               </td>
               <td class="font-mono" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ record.host.id | default(record.host | default('')) }}">
                 {{ record.host.id | default(record.host | default("—")) }}
@@ -32,7 +36,7 @@
             {% endfor %}
           {% else %}
             <tr>
-              <td colspan="3" class="text-center text-secondary py-4">No records found</td>
+              <td colspan="4" class="text-center text-secondary py-4">No records found</td>
             </tr>
           {% endif %}
         </tbody>
