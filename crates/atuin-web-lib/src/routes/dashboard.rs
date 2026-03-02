@@ -70,7 +70,7 @@ pub async fn get(
                     if let Some(tags_obj) = tags.as_object() {
                         for (tag, count) in tags_obj {
                             if let Some(n) = count.as_i64() {
-                                *tag_totals.entry(tag.clone()).or_insert(0) += n;
+                                *tag_totals.entry(tag.clone()).or_insert(0) += n + 1;
                             }
                         }
                     }

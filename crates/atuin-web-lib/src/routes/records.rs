@@ -167,9 +167,9 @@ pub async fn get(
                 let mut count = 0u64;
                 for (host_id, tags) in hosts {
                     if let Some(n) = tags.get(&tag).and_then(|v| v.as_u64()) {
-                        if n > 0 && found_host.is_none() {
+                        if found_host.is_none() {
                             found_host = Some(host_id.clone());
-                            count = n;
+                            count = n + 1;
                             break;
                         }
                     }
