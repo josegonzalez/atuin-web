@@ -17,7 +17,7 @@ Multi-arch images (`linux/amd64`, `linux/arm64`) are published to GHCR on each r
 docker run -p 8080:8080 \
   -e ATUIN_WEB_BIND=0.0.0.0:8080 \
   -e ATUIN_WEB_SERVER_URL=http://your-atuin-server:8888 \
-  ghcr.io/josegonzalez/atuin-web:v0.1.1
+  ghcr.io/josegonzalez/atuin-web:v0.2.0
 ```
 
 Replace `v0.1.1` with the desired release tag. Available tags are listed on the
