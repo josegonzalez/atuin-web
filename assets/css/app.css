@@ -75,6 +75,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-height: 1.875rem;
 }
 
 .sidebar-brand:hover {
@@ -139,6 +140,14 @@
 .sidebar-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--bs-border-color);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 4.5rem;
+}
+
+.sidebar-footer > :last-child {
+  margin-bottom: 0 !important;
 }
 
 .main-content {
@@ -151,15 +160,18 @@
 }
 
 .content-header {
-  padding: 1.44rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--bs-border-color);
   background: var(--bs-body-bg);
+  display: flex;
+  align-items: center;
 }
 
 .content-header h1 {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
+  line-height: 1.875rem;
 }
 
 .content-body {
@@ -529,6 +541,50 @@
     display: none;
   }
 
+  .sidebar-header {
+    padding-left: 4rem;
+  }
+
+  .content-header {
+    padding-left: 4rem;
+  }
+
+  /* Reset collapsed sidebar styles on mobile — sidebar is either off-screen or full-width overlay */
+  .sidebar.collapsed .sidebar-brand {
+    display: flex;
+  }
+
+  .sidebar.collapsed .sidebar-brand span,
+  .sidebar.collapsed .sidebar-section-label,
+  .sidebar.collapsed .sidebar-link span,
+  .sidebar.collapsed #keyStatusText {
+    display: inline;
+  }
+
+  .sidebar.collapsed .sidebar-link {
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sidebar.collapsed .sidebar-header {
+    justify-content: space-between;
+  }
+
+  .sidebar.collapsed .sidebar-footer {
+    padding: 1rem 1.5rem;
+  }
+
+  .sidebar.collapsed .sidebar-footer .d-flex {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .sidebar.collapsed .key-status {
+    justify-content: flex-start;
+    padding: 0.5rem 0.75rem;
+  }
+
   .main-content {
     margin-left: 0 !important;
   }
@@ -600,11 +656,14 @@
 
 /* ===== Footer ===== */
 .app-footer {
-  text-align: center;
   font-size: 0.75rem;
   color: var(--text-faint);
   border-top: 1px solid var(--bs-border-color);
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 4.5rem;
 }
 
 .app-footer a {
