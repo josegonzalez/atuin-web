@@ -47,10 +47,11 @@ jobs:
         run: |
           sed -i 's/^version = ".*"/version = "${{ steps.bump.outputs.version }}"/' Cargo.toml
           cargo generate-lockfile
+          sed -i 's|ghcr.io/josegonzalez/atuin-web:v[0-9]*\.[0-9]*\.[0-9]*|ghcr.io/josegonzalez/atuin-web:${{ steps.bump.outputs.tag }}|' docs/deployment.md
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Cargo.toml Cargo.lock
+          git add Cargo.toml Cargo.lock docs/deployment.md
           git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
           git tag "${{ steps.bump.outputs.tag }}"
           git push origin HEAD "${{ steps.bump.outputs.tag }}"
