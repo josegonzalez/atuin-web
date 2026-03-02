@@ -232,6 +232,31 @@
   border: 1px solid var(--bs-border-color);
 }
 
+/* Record table fixed layout */
+.table-records {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table-records .col-index { width: 100px; }
+.table-records .col-created { width: 110px; }
+.table-records .col-host { width: 120px; }
+.table-records .col-data { width: auto; }
+
+.table-records .col-host,
+.table-records td.col-host {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-records td.col-data {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  max-width: 0;
+}
+
 /* ===== Monospace ===== */
 .font-mono {
   font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
@@ -479,6 +504,10 @@
   .card-grid {
     grid-template-columns: 1fr;
   }
+
+  .table-records .col-index { width: 55px; }
+  .table-records .col-created { width: 130px; }
+  .table-records .col-host { width: 80px; }
 }
 
 @media (min-width: 768px) and (max-width: 1199.98px) {

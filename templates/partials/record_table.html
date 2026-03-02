@@ -1,10 +1,10 @@
 <div class="card">
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-hover mb-0">
+      <table class="table table-hover table-records mb-0">
         <thead>
           <tr>
-            <th>
+            <th class="col-index">
               <a href="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={% if sort == 'asc' %}desc{% else %}asc{% endif %}"
                  hx-get="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={% if sort == 'asc' %}desc{% else %}asc{% endif %}"
                  hx-target="#records-content"
@@ -14,25 +14,26 @@
                 Index {% if sort == 'asc' %}&#9650;{% else %}&#9660;{% endif %}
               </a>
             </th>
-            <th>Created</th>
-            <th>Host</th>
-            <th>Data</th>
+            <th class="col-created">Created</th>
+            <th class="col-host">Host</th>
+            <th class="col-data">Data</th>
           </tr>
         </thead>
         <tbody>
           {% if next is iterable %}
             {% for record in next %}
             <tr>
-              <td class="font-mono">
+              <td class="font-mono col-index">
                 {{ record.idx | default("—") }}
               </td>
-              <td class="font-mono text-nowrap">
+              <td class="font-mono text-nowrap col-created">
                 {{ record.id | default("") | uuid7_timestamp }}
               </td>
-              <td class="font-mono" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ record.host.id | default(record.host | default('')) }}">
+              <td class="font-mono col-host" title="{{ record.host.id | default(record.host | default('')) }}">
                 {{ record.host.id | default(record.host | default("—")) }}
               </td>
-              <td data-encrypted="{{ record.data.data | default('') }}"
+              <td class="col-data"
+                  data-encrypted="{{ record.data.data | default('') }}"
                   data-cek="{{ record.data.content_encryption_key | default('') }}"
                   data-rid="{{ record.id | default('') }}"
                   data-ridx="{{ record.idx | default(0) }}"
