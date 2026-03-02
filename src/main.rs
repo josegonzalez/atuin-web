@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use atuin_web_lib::app::{self, AppState};
-use atuin_web_lib::client::AtuinClient;
-use atuin_web_lib::config::Config;
-use atuin_web_lib::templates;
+use atuin_web::app::{self, AppState};
+use atuin_web::client::AtuinClient;
+use atuin_web::config::Config;
+use atuin_web::templates;
 use clap::Parser;
 use tower_sessions::cookie::time::Duration;
 use tower_sessions::{Expiry, SessionManagerLayer};

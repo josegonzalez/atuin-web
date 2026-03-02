@@ -1,5 +1,5 @@
-use atuin_web_lib::client::AtuinClient;
-use atuin_web_lib::error::WebError;
+use atuin_web::client::AtuinClient;
+use atuin_web::error::WebError;
 
 const TEST_PASSWORD: &str = "test-password";
 

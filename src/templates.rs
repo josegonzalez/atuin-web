@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 #[derive(Embed)]
-#[folder = "../../templates/"]
+#[folder = "templates/"]
 pub struct TemplateAssets;
 
 fn uuid7_timestamp(value: &str) -> String {

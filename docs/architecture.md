@@ -30,10 +30,7 @@ Browser <--HTTP--> [atuin-web (Axum 0.8)] <--API client--> [atuin server]
 
 ## Project Structure
 
-The project uses a Cargo workspace with two crates:
-
-- `crates/atuin-web/` — Binary crate (server startup, session layer)
-- `crates/atuin-web-lib/` — Library crate (routes, templates, client, auth)
+The project is a single Rust crate with both `src/lib.rs` (library) and `src/main.rs` (binary entry point) at the repo root.
 
 Static assets and templates are embedded into the release binary via `rust-embed`.
 

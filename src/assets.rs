@@ -3,7 +3,7 @@ use axum::response::{IntoResponse, Response};
 use rust_embed::Embed;
 
 #[derive(Embed)]
-#[folder = "../../assets/"]
+#[folder = "assets/"]
 pub struct StaticAssets;
 
 pub async fn serve_favicon() -> Result<Response, StatusCode> {

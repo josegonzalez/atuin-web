@@ -1,12 +1,14 @@
-[workspace]
-members = ["crates/atuin-web", "crates/atuin-web-lib"]
-resolver = "2"
-
-[workspace.package]
+[package]
+name = "atuin-web"
 version = "0.1.1"
+edition = "2021"
 license = "MIT"
 
-[workspace.dependencies]
+[features]
+default = []
+embed-templates = []
+
+[dependencies]
 axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 serde = { version = "1", features = ["derive"] }
@@ -24,6 +26,10 @@ rust-embed = { version = "8", features = ["mime-guess"] }
 clap = { version = "4", features = ["derive", "env"] }
 mime_guess = "2"
 humantime = "2"
+
+[dev-dependencies]
+axum-test = "19"
+mockito = "1"
 
 [profile.release]
 opt-level = "z"
