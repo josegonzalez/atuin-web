@@ -487,6 +487,10 @@
   margin-left: 64px;
 }
 
+.main-content.sidebar-collapsed .app-footer {
+  min-height: calc(5.5rem + 1px);
+}
+
 .sidebar.collapsed .sidebar-brand span,
 .sidebar.collapsed .sidebar-section-label,
 .sidebar.collapsed .sidebar-link span,
