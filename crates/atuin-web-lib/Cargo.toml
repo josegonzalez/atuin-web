@@ -26,6 +26,6 @@ mime_guess = { workspace = true }
 humantime = { workspace = true }
 
 [dev-dependencies]
-axum-test = "16"
+axum-test = "19"
 mockito = "1"
 tower-sessions-memory-store = { workspace = true }
