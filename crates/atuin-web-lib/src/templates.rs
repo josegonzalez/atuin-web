@@ -35,6 +35,7 @@ fn register_filters(env: &mut Environment<'static>) {
 pub fn create_environment() -> Environment<'static> {
     let mut env = Environment::new();
 
+    #[allow(unused_mut)]
     let mut loaded = false;
 
     // Try loading templates from disk first (for dev hot-reload)
