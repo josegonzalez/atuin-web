@@ -4,7 +4,16 @@
       <table class="table table-hover mb-0">
         <thead>
           <tr>
-            <th>Index</th>
+            <th>
+              <a href="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={% if sort == 'asc' %}desc{% else %}asc{% endif %}"
+                 hx-get="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={% if sort == 'asc' %}desc{% else %}asc{% endif %}"
+                 hx-target="#records-content"
+                 hx-push-url="true"
+                 class="text-decoration-none text-reset"
+                 title="Click to reverse sort order">
+                Index {% if sort == 'asc' %}&#9650;{% else %}&#9660;{% endif %}
+              </a>
+            </th>
             <th>Created</th>
             <th>Host</th>
             <th>Data</th>

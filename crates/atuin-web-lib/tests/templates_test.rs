@@ -63,6 +63,7 @@ fn test_render_pagination_multi_page() {
             next => serde_json::json!([]),
             pagination => pagination,
             tag => "history",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
@@ -98,6 +99,7 @@ fn test_render_pagination_hidden_single_page() {
             next => serde_json::json!([]),
             pagination => pagination,
             tag => "history",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
@@ -129,6 +131,7 @@ fn test_render_pagination_hidden_zero_records() {
             next => serde_json::json!([]),
             pagination => pagination,
             tag => "history",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
@@ -162,6 +165,7 @@ fn test_render_record_table_with_each_tag() {
                 next => serde_json::json!([]),
                 pagination => pagination,
                 tag => *tag,
+                sort => "desc",
             },
         );
         assert!(result.is_ok(), "Failed to render record_table for tag: {}", tag);
@@ -190,6 +194,7 @@ fn test_render_pagination_preserves_tag() {
             next => serde_json::json!([]),
             pagination => pagination,
             tag => "kv",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
@@ -283,6 +288,7 @@ fn test_uuid7_timestamp_filter() {
                 page_sizes: vec![25, 50, 100],
             },
             tag => "history",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
@@ -319,6 +325,7 @@ fn test_uuid7_timestamp_filter_invalid_input() {
                 page_sizes: vec![25, 50, 100],
             },
             tag => "history",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
@@ -354,9 +361,44 @@ fn test_uuid7_timestamp_filter_empty_input() {
                 page_sizes: vec![25, 50, 100],
             },
             tag => "history",
+            sort => "desc",
         },
     );
     assert!(result.is_ok());
     let html = result.unwrap();
     assert!(html.contains("\u{2014}"), "Empty string should show em-dash fallback");
+}
+
+#[test]
+fn test_render_pagination_preserves_sort() {
+    let env = templates::create_environment();
+    let pagination = PaginationInfo {
+        current_page: 2,
+        total_pages: 4,
+        total_records: 100,
+        page_size: 25,
+        has_prev: true,
+        has_next: true,
+        prev_page: 1,
+        next_page: 3,
+        page_numbers: vec![1, 2, 3, 4],
+        page_sizes: vec![25, 50, 100],
+    };
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([]),
+            pagination => pagination,
+            tag => "history",
+            sort => "asc",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("sort=asc"), "Pagination URLs should preserve sort=asc");
+    // The Index header toggle link should offer the opposite sort direction
+    assert!(html.contains("sort=desc"), "Index header should link to sort=desc when current is asc");
+    // Should show ascending arrow
+    assert!(html.contains("▲") || html.contains("&#9650;"), "Should show ascending arrow");
 }

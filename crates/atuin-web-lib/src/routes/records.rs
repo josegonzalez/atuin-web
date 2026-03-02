@@ -38,6 +38,8 @@ pub struct RecordsQuery {
     #[serde(default = "default_page_size")]
     pub page_size: u64,
     pub tag: Option<String>,
+    #[serde(default = "default_sort")]
+    pub sort: String,
 }
 
 fn default_page() -> u64 {
@@ -45,6 +47,9 @@ fn default_page() -> u64 {
 }
 fn default_page_size() -> u64 {
     DEFAULT_PAGE_SIZE
+}
+fn default_sort() -> String {
+    "desc".to_string()
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -59,6 +64,17 @@ pub struct PaginationInfo {
     pub next_page: u64,
     pub page_numbers: Vec<u64>,
     pub page_sizes: Vec<u64>,
+}
+
+/// Compute the (start, count) window for reverse pagination.
+/// Page 1 returns the highest-index records, descending across pages.
+pub fn reverse_pagination_window(page: u64, total_records: u64, page_size: u64) -> (u64, u64) {
+    let reverse_start = total_records as i64 - (page * page_size) as i64;
+    if reverse_start < 0 {
+        (0, (page_size as i64 + reverse_start) as u64)
+    } else {
+        (reverse_start as u64, page_size)
+    }
 }
 
 pub fn clamp_page_size(size: u64) -> u64 {
@@ -184,17 +200,40 @@ pub async fn get(
 
     let page_size = clamp_page_size(query.page_size);
     let pagination = calculate_pagination(query.page, total_records, page_size);
-    let start = (pagination.current_page - 1) * pagination.page_size;
+    let sort = if query.sort == "asc" { "asc" } else { "desc" };
+    let reverse = sort == "desc";
+
+    // For history, paginate from the end so page 1 shows the newest records
+    let (start, count) = if reverse {
+        reverse_pagination_window(
+            pagination.current_page,
+            total_records,
+            pagination.page_size,
+        )
+    } else {
+        (
+            (pagination.current_page - 1) * pagination.page_size,
+            pagination.page_size,
+        )
+    };
 
     // Fetch record/next for the target host
     let next = match target_host {
         Some(host_id) => {
             let path = format!(
                 "/api/v0/record/next?host={}&tag={}&start={}&count={}",
-                host_id, tag, start, pagination.page_size
+                host_id, tag, start, count
             );
             match state.client.get(&path, &token).await {
-                Ok(v) => v,
+                Ok(mut v) => {
+                    // Reverse the array so newest records appear first
+                    if reverse {
+                        if let Some(arr) = v.as_array_mut() {
+                            arr.reverse();
+                        }
+                    }
+                    v
+                }
                 Err(e) => {
                     tracing::warn!(error = %e, "failed to fetch next records from /api/v0/record/next");
                     serde_json::Value::default()
@@ -224,6 +263,7 @@ pub async fn get(
             active_page => "records",
             tag => tag,
             tag_label => label,
+            sort => sort,
             has_config_token => state.config.token.is_some(),
         },
     )?;
@@ -369,5 +409,45 @@ mod tests {
         assert!(!ALLOWED_TAGS.contains(&"invalid"));
         assert!(!ALLOWED_TAGS.contains(&""));
         assert!(!ALLOWED_TAGS.contains(&"History"));
+    }
+
+    #[test]
+    fn test_reverse_pagination_page1_even() {
+        // 100 records, page_size 25: page 1 → start=75, count=25 (indices 75-99)
+        let (start, count) = reverse_pagination_window(1, 100, 25);
+        assert_eq!(start, 75);
+        assert_eq!(count, 25);
+    }
+
+    #[test]
+    fn test_reverse_pagination_last_page_even() {
+        // 100 records, page_size 25: page 4 → start=0, count=25 (indices 0-24)
+        let (start, count) = reverse_pagination_window(4, 100, 25);
+        assert_eq!(start, 0);
+        assert_eq!(count, 25);
+    }
+
+    #[test]
+    fn test_reverse_pagination_middle_page() {
+        // 100 records, page_size 25: page 2 → start=50, count=25 (indices 50-74)
+        let (start, count) = reverse_pagination_window(2, 100, 25);
+        assert_eq!(start, 50);
+        assert_eq!(count, 25);
+    }
+
+    #[test]
+    fn test_reverse_pagination_partial_last_page() {
+        // 110 records, page_size 25: page 5 → start=0, count=10 (indices 0-9)
+        let (start, count) = reverse_pagination_window(5, 110, 25);
+        assert_eq!(start, 0);
+        assert_eq!(count, 10);
+    }
+
+    #[test]
+    fn test_reverse_pagination_single_page() {
+        // 10 records, page_size 25: page 1 → start=0, count=10
+        let (start, count) = reverse_pagination_window(1, 10, 25);
+        assert_eq!(start, 0);
+        assert_eq!(count, 10);
     }
 }
