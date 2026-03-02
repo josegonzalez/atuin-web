@@ -12,12 +12,32 @@ use crate::templates;
 const DEFAULT_PAGE_SIZE: u64 = 25;
 const ALLOWED_PAGE_SIZES: [u64; 3] = [25, 50, 100];
 
+pub const ALLOWED_TAGS: [&str; 5] = [
+    "history",
+    "kv",
+    "config-shell-alias",
+    "dotfiles-var",
+    "script",
+];
+
+pub fn tag_label(tag: &str) -> &str {
+    match tag {
+        "history" => "History",
+        "kv" => "Key-Value",
+        "config-shell-alias" => "Aliases",
+        "dotfiles-var" => "Variables",
+        "script" => "Scripts",
+        _ => "Records",
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct RecordsQuery {
     #[serde(default = "default_page")]
     pub page: u64,
     #[serde(default = "default_page_size")]
     pub page_size: u64,
+    pub tag: Option<String>,
 }
 
 fn default_page() -> u64 {
@@ -106,52 +126,82 @@ pub async fn get(
     )
     .ok_or(WebError::Unauthorized)?;
 
+    // Validate tag — if missing or not in ALLOWED_TAGS, show landing page
+    let tag = match &query.tag {
+        Some(t) if ALLOWED_TAGS.contains(&t.as_str()) => t.clone(),
+        _ => {
+            let is_htmx = headers
+                .get("HX-Request")
+                .map(|v| v == "true")
+                .unwrap_or(false);
+
+            let template = if is_htmx {
+                "records_index.html"
+            } else {
+                "records_index.html"
+            };
+
+            let html = templates::render(
+                &state.templates,
+                template,
+                minijinja::context! {
+                    active_page => "records",
+                    tag => "",
+                    has_config_token => state.config.token.is_some(),
+                },
+            )?;
+            return Ok(Html(html));
+        }
+    };
+
+    let label = tag_label(&tag);
+
     let records = state.client.get("/api/v0/record", &token).await;
 
-    // Extract total record count (max_idx for first host's "history" tag)
-    let total_records = match &records {
+    // Extract total record count for the selected tag
+    // Find the first host that has records for this tag
+    let (total_records, target_host) = match &records {
         Ok(status) => {
             if let Some(hosts) = status["hosts"].as_object() {
-                if let Some((_host_id, tags)) = hosts.iter().next() {
-                    tags["history"].as_u64().unwrap_or(0)
-                } else {
-                    0
+                let mut found_host = None;
+                let mut count = 0u64;
+                for (host_id, tags) in hosts {
+                    if let Some(n) = tags.get(&tag).and_then(|v| v.as_u64()) {
+                        if n > 0 && found_host.is_none() {
+                            found_host = Some(host_id.clone());
+                            count = n;
+                            break;
+                        }
+                    }
                 }
+                (count, found_host)
             } else {
-                0
+                (0, None)
             }
         }
-        Err(_) => 0,
+        Err(_) => (0, None),
     };
 
     let page_size = clamp_page_size(query.page_size);
     let pagination = calculate_pagination(query.page, total_records, page_size);
     let start = (pagination.current_page - 1) * pagination.page_size;
 
-    // Fetch record/next for the first host found in the record status
-    let next = match &records {
-        Ok(status) => {
-            if let Some(hosts) = status["hosts"].as_object() {
-                if let Some(host_id) = hosts.keys().next() {
-                    let path = format!(
-                        "/api/v0/record/next?host={}&tag=history&start={}&count={}",
-                        host_id, start, pagination.page_size
-                    );
-                    match state.client.get(&path, &token).await {
-                        Ok(v) => v,
-                        Err(e) => {
-                            tracing::warn!(error = %e, "failed to fetch next records from /api/v0/record/next");
-                            serde_json::Value::default()
-                        }
-                    }
-                } else {
+    // Fetch record/next for the target host
+    let next = match target_host {
+        Some(host_id) => {
+            let path = format!(
+                "/api/v0/record/next?host={}&tag={}&start={}&count={}",
+                host_id, tag, start, pagination.page_size
+            );
+            match state.client.get(&path, &token).await {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(error = %e, "failed to fetch next records from /api/v0/record/next");
                     serde_json::Value::default()
                 }
-            } else {
-                serde_json::Value::default()
             }
         }
-        Err(_) => serde_json::Value::default(),
+        None => serde_json::Value::default(),
     };
 
     let is_htmx = headers
@@ -172,6 +222,8 @@ pub async fn get(
             next => next,
             pagination => pagination,
             active_page => "records",
+            tag => tag,
+            tag_label => label,
             has_config_token => state.config.token.is_some(),
         },
     )?;
@@ -291,5 +343,31 @@ mod tests {
         let p = calculate_pagination(1, 100, 50);
         assert_eq!(p.page_size, 50);
         assert_eq!(p.total_pages, 2);
+    }
+
+    #[test]
+    fn test_tag_label() {
+        assert_eq!(tag_label("history"), "History");
+        assert_eq!(tag_label("kv"), "Key-Value");
+        assert_eq!(tag_label("config-shell-alias"), "Aliases");
+        assert_eq!(tag_label("dotfiles-var"), "Variables");
+        assert_eq!(tag_label("script"), "Scripts");
+        assert_eq!(tag_label("unknown"), "Records");
+    }
+
+    #[test]
+    fn test_allowed_tags_contains_all() {
+        assert!(ALLOWED_TAGS.contains(&"history"));
+        assert!(ALLOWED_TAGS.contains(&"kv"));
+        assert!(ALLOWED_TAGS.contains(&"config-shell-alias"));
+        assert!(ALLOWED_TAGS.contains(&"dotfiles-var"));
+        assert!(ALLOWED_TAGS.contains(&"script"));
+    }
+
+    #[test]
+    fn test_allowed_tags_rejects_invalid() {
+        assert!(!ALLOWED_TAGS.contains(&"invalid"));
+        assert!(!ALLOWED_TAGS.contains(&""));
+        assert!(!ALLOWED_TAGS.contains(&"History"));
     }
 }

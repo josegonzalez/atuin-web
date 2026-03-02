@@ -55,6 +55,13 @@ When you save a `.rs` or `.toml` file, `watchexec` kills the running process and
 cargo test
 ```
 
+## JavaScript Tests
+
+Browser-based test files in `tests/unit/` can be opened directly in a browser:
+
+- `test-paseto-v4.html` — PASETO V4 decryption + PASERK PIE unwrap test vectors
+- `test-decoders.html` — Tag-specific record decoder tests (kv, alias, var, script, history)
+
 ## Release Build
 
 ```bash

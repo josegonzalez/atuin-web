@@ -14,15 +14,43 @@
 
   <div class="card">
     <div class="card-body">
-      <div class="stat-label">History Count</div>
-      <div class="stat-value">{{ count.count | default("—") }}</div>
+      <div class="stat-label">Username</div>
+      <div class="stat-value font-mono" style="font-size: 1.25rem;">{{ me.username | default("—") }}</div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-body">
-      <div class="stat-label">Username</div>
-      <div class="stat-value font-mono" style="font-size: 1.25rem;">{{ me.username | default("—") }}</div>
+      <div class="stat-label"><a href="/records?tag=history" class="text-decoration-none">History</a></div>
+      <div class="stat-value">{{ counts.history | default(0) }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label"><a href="/records?tag=kv" class="text-decoration-none">Key-Value</a></div>
+      <div class="stat-value">{{ counts.kv | default(0) }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label"><a href="/records?tag=config-shell-alias" class="text-decoration-none">Aliases</a></div>
+      <div class="stat-value">{{ counts["config-shell-alias"] | default(0) }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label"><a href="/records?tag=dotfiles-var" class="text-decoration-none">Variables</a></div>
+      <div class="stat-value">{{ counts["dotfiles-var"] | default(0) }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="stat-label"><a href="/records?tag=script" class="text-decoration-none">Scripts</a></div>
+      <div class="stat-value">{{ counts.script | default(0) }}</div>
     </div>
   </div>
 </div>
@@ -73,7 +101,7 @@
             {% for tag, count in tags | items %}
             <tr>
               <td class="font-mono" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ host_id }}">{{ host_id }}</td>
-              <td class="font-mono">{{ tag }}</td>
+              <td class="font-mono"><a href="/records?tag={{ tag }}">{{ tag }}</a></td>
               <td class="font-mono">{{ count }}</td>
             </tr>
             {% endfor %}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Atuin Record Decoder Tests</title>
+  <style>
+    body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; }
+    .pass { color: #4caf50; }
+    .fail { color: #f44336; }
+    .section { margin: 20px 0; padding: 10px; border: 1px solid #333; }
+    h2 { color: #82aaff; }
+    pre { white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+    #summary { font-size: 18px; margin: 20px 0; padding: 15px; border: 2px solid #333; }
+  </style>
+</head>
+<body>
+  <h1>Atuin Record Decoder Tests</h1>
+  <div id="summary">Running tests...</div>
+  <div id="results"></div>
+
+  <script src="../../assets/js/msgpack.min.js"></script>
+  <script src="../../assets/js/blake2b.min.js"></script>
+  <script src="../../assets/js/paseto-v4.js"></script>
+  <script src="../../assets/js/decrypt.js"></script>
+  <script>
+    (function() {
+      var results = document.getElementById("results");
+      var passed = 0;
+      var failed = 0;
+
+      function log(name, ok, detail) {
+        var div = document.createElement("div");
+        div.className = ok ? "pass" : "fail";
+        div.textContent = (ok ? "PASS" : "FAIL") + " " + name;
+        if (detail) {
+          var pre = document.createElement("pre");
+          pre.textContent = detail;
+          div.appendChild(pre);
+        }
+        results.appendChild(div);
+        if (ok) passed++; else failed++;
+      }
+
+      function assertEqual(name, actual, expected) {
+        if (actual === expected) {
+          log(name, true);
+        } else {
+          log(name, false, "Expected: " + JSON.stringify(expected) + "\nGot:      " + JSON.stringify(actual));
+        }
+      }
+
+      // Helper: build outer msgpack envelope (version + data)
+      function buildOuter(version, innerData) {
+        var versionBytes = MessagePack.encode(version);
+        var dataBytes = MessagePack.encode(innerData);
+        var combined = new Uint8Array(versionBytes.length + dataBytes.length);
+        combined.set(versionBytes, 0);
+        combined.set(dataBytes, versionBytes.length);
+        return combined;
+      }
+
+      // Helper: build discriminant + data (for alias, var, script)
+      function buildDiscriminated(discriminant, data) {
+        var dBytes = MessagePack.encode(discriminant);
+        var dataBytes = MessagePack.encode(data);
+        var combined = new Uint8Array(dBytes.length + dataBytes.length);
+        combined.set(dBytes, 0);
+        combined.set(dataBytes, dBytes.length);
+        return combined;
+      }
+
+      var D = window.AtuinDecoders;
+
+      // --- KV Tests ---
+      var h2 = document.createElement("h2");
+      h2.textContent = "KV Decoder";
+      results.appendChild(h2);
+
+      (function() {
+        // KV Create: [namespace, key, true, value]
+        var kvCreate = ["default", "mykey", true, "myvalue"];
+        var inner = MessagePack.encode(kvCreate);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("kv", outer);
+        assertEqual("KV Create", result, "default:mykey = myvalue");
+      })();
+
+      (function() {
+        // KV Delete: [namespace, key, false]
+        var kvDelete = ["ns", "delkey", false];
+        var inner = MessagePack.encode(kvDelete);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("kv", outer);
+        assertEqual("KV Delete", result, "ns:delkey (deleted)");
+      })();
+
+      // --- Alias Tests ---
+      var h3 = document.createElement("h2");
+      h3.textContent = "Alias Decoder";
+      results.appendChild(h3);
+
+      (function() {
+        // Alias Create: discriminant 0 + array [name, value]
+        var inner = buildDiscriminated(0, ["ll", "ls -la"]);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("config-shell-alias", outer);
+        assertEqual("Alias Create", result, "alias ll='ls -la'");
+      })();
+
+      (function() {
+        // Alias Delete: discriminant 1 + array [name]
+        var inner = buildDiscriminated(1, ["ll"]);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("config-shell-alias", outer);
+        assertEqual("Alias Delete", result, "unalias ll");
+      })();
+
+      // --- Var Tests ---
+      var h4 = document.createElement("h2");
+      h4.textContent = "Var Decoder";
+      results.appendChild(h4);
+
+      (function() {
+        // Var Create (export): discriminant 0 + [name, value, true]
+        var inner = buildDiscriminated(0, ["PATH", "/usr/bin", true]);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("dotfiles-var", outer);
+        assertEqual("Var Create (export)", result, "export PATH=/usr/bin");
+      })();
+
+      (function() {
+        // Var Create (no export): discriminant 0 + [name, value, false]
+        var inner = buildDiscriminated(0, ["FOO", "bar", false]);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("dotfiles-var", outer);
+        assertEqual("Var Create (no export)", result, "FOO=bar");
+      })();
+
+      (function() {
+        // Var Delete: discriminant 1 + [name]
+        var inner = buildDiscriminated(1, ["OLD_VAR"]);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("dotfiles-var", outer);
+        assertEqual("Var Delete", result, "unset OLD_VAR");
+      })();
+
+      // --- Script Tests ---
+      var h5 = document.createElement("h2");
+      h5.textContent = "Script Decoder";
+      results.appendChild(h5);
+
+      (function() {
+        // Script Create: discriminant 0 + bin(array [id, name, desc, shebang, tags, script])
+        var scriptArray = ["abc-123", "backup", "Daily backup script", "#!/bin/bash", [], "tar czf backup.tar.gz /data"];
+        var scriptBin = MessagePack.encode(scriptArray);
+        var inner = buildDiscriminated(0, scriptBin);
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("script", outer);
+        assertEqual("Script Create", result, "backup \u2014 Daily backup script");
+      })();
+
+      (function() {
+        // Script Delete: discriminant 1 + str(uuid)
+        var inner = buildDiscriminated(1, "550e8400-e29b-41d4-a716-446655440000");
+        var outer = buildOuter("v0", inner);
+        var result = D.decodeRecord("script", outer);
+        assertEqual("Script Delete", result, "delete 550e8400-e29b-41d4-a716-446655440000");
+      })();
+
+      // --- History Tests ---
+      var h6 = document.createElement("h2");
+      h6.textContent = "History Decoder";
+      results.appendChild(h6);
+
+      (function() {
+        // History: version + bin(version + array [id, ts, dur, exit, command, cwd, session, hostname, deleted_at])
+        var histArray = ["id1", 1700000000, 100, 0, "echo hello", "/home/user", "sess1", "myhost", null];
+        var innerBin = buildOuter("v0", histArray);
+        var outer = buildOuter("v0", innerBin);
+        var result = D.decodeRecord("history", outer);
+        assertEqual("History Create", result, "echo hello");
+      })();
+
+      // Summary
+      var summary = document.getElementById("summary");
+      if (failed === 0) {
+        summary.className = "pass";
+        summary.textContent = "All " + passed + " tests passed!";
+      } else {
+        summary.className = "fail";
+        summary.textContent = failed + " of " + (passed + failed) + " tests failed";
+      }
+    })();
+  </script>
+</body>
+</html>

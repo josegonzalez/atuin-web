@@ -62,6 +62,7 @@ fn test_render_pagination_multi_page() {
         minijinja::context! {
             next => serde_json::json!([]),
             pagination => pagination,
+            tag => "history",
         },
     );
     assert!(result.is_ok());
@@ -96,6 +97,7 @@ fn test_render_pagination_hidden_single_page() {
         minijinja::context! {
             next => serde_json::json!([]),
             pagination => pagination,
+            tag => "history",
         },
     );
     assert!(result.is_ok());
@@ -126,6 +128,7 @@ fn test_render_pagination_hidden_zero_records() {
         minijinja::context! {
             next => serde_json::json!([]),
             pagination => pagination,
+            tag => "history",
         },
     );
     assert!(result.is_ok());
@@ -133,4 +136,120 @@ fn test_render_pagination_hidden_zero_records() {
     // With 0 records, pagination section should be completely hidden
     assert!(!html.contains("Page 1 of 1"));
     assert!(!html.contains("per page"));
+}
+
+#[test]
+fn test_render_record_table_with_each_tag() {
+    let env = templates::create_environment();
+    let tags = ["history", "kv", "config-shell-alias", "dotfiles-var", "script"];
+    for tag in &tags {
+        let pagination = PaginationInfo {
+            current_page: 1,
+            total_pages: 1,
+            total_records: 0,
+            page_size: 25,
+            has_prev: false,
+            has_next: false,
+            prev_page: 1,
+            next_page: 1,
+            page_numbers: vec![1],
+            page_sizes: vec![25, 50, 100],
+        };
+        let result = templates::render(
+            &env,
+            "partials/record_table.html",
+            minijinja::context! {
+                next => serde_json::json!([]),
+                pagination => pagination,
+                tag => *tag,
+            },
+        );
+        assert!(result.is_ok(), "Failed to render record_table for tag: {}", tag);
+    }
+}
+
+#[test]
+fn test_render_pagination_preserves_tag() {
+    let env = templates::create_environment();
+    let pagination = PaginationInfo {
+        current_page: 2,
+        total_pages: 4,
+        total_records: 100,
+        page_size: 25,
+        has_prev: true,
+        has_next: true,
+        prev_page: 1,
+        next_page: 3,
+        page_numbers: vec![1, 2, 3, 4],
+        page_sizes: vec![25, 50, 100],
+    };
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([]),
+            pagination => pagination,
+            tag => "kv",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("tag=kv"), "Pagination URLs should contain tag=kv");
+}
+
+#[test]
+fn test_render_records_index() {
+    let env = templates::create_environment();
+    let result = templates::render(
+        &env,
+        "records_index.html",
+        minijinja::context! {
+            active_page => "records",
+            tag => "",
+            has_config_token => false,
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("tag=history"));
+    assert!(html.contains("tag=kv"));
+    assert!(html.contains("tag=config-shell-alias"));
+    assert!(html.contains("tag=dotfiles-var"));
+    assert!(html.contains("tag=script"));
+    assert!(html.contains("Select a record type"));
+}
+
+#[test]
+fn test_render_dashboard_with_counts() {
+    let env = templates::create_environment();
+    let mut counts = std::collections::HashMap::new();
+    counts.insert("history".to_string(), 1234i64);
+    counts.insert("kv".to_string(), 56i64);
+    counts.insert("config-shell-alias".to_string(), 78i64);
+    counts.insert("dotfiles-var".to_string(), 9i64);
+    counts.insert("script".to_string(), 10i64);
+
+    let result = templates::render(
+        &env,
+        "partials/dashboard_content.html",
+        minijinja::context! {
+            me => serde_json::json!({"username": "testuser"}),
+            counts => counts,
+            status => serde_json::json!({"hosts": {}}),
+            health => "Ok",
+            errors => Vec::<String>::new(),
+            server_url => "http://localhost:8888",
+            tag => "",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("1234"), "Should show history count");
+    assert!(html.contains("56"), "Should show kv count");
+    assert!(html.contains("78"), "Should show alias count");
+    assert!(html.contains("/records?tag=history"));
+    assert!(html.contains("/records?tag=kv"));
+    assert!(html.contains("/records?tag=config-shell-alias"));
+    assert!(html.contains("/records?tag=dotfiles-var"));
+    assert!(html.contains("/records?tag=script"));
 }

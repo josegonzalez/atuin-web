@@ -37,12 +37,26 @@ The project uses a Cargo workspace with two crates:
 
 Static assets and templates are embedded into the release binary via `rust-embed`.
 
+## Record Types
+
+The web UI supports five record types, selected via the `?tag=` query parameter on `/records`:
+
+| Tag | Label | Description |
+|-----|-------|-------------|
+| `history` | History | Shell command history |
+| `kv` | Key-Value | Key-value store entries |
+| `config-shell-alias` | Aliases | Shell alias definitions |
+| `dotfiles-var` | Variables | Environment variables |
+| `script` | Scripts | Saved scripts |
+
+Each type has a tag-specific MessagePack decoder in `decrypt.js` that formats the decrypted data for display.
+
 ## Client-Side JavaScript
 
 - `paseto-v4.js` — PASETO V4 local decryption + PASERK PIE key unwrapping
 - `blake2b.min.js` — BLAKE2b hashing (used by PASETO key derivation)
 - `msgpack.min.js` — MessagePack decoding for decrypted record payloads
 - `bip39.min.js` — BIP39 mnemonic word list for key input
-- `decrypt.js` — Key management (sessionStorage), decryption orchestration, click-to-copy
+- `decrypt.js` — Key management (sessionStorage), decryption orchestration, click-to-copy, tag-specific MessagePack decoders for history/kv/alias/var/script records
 - `theme.js` — Dark/light theme toggle
 - `htmx.min.js` — Partial page updates; used for records pagination via `hx-*` attributes

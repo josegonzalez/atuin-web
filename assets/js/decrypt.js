@@ -31,6 +31,156 @@
     sessionStorage.removeItem(KEY_STORAGE);
   }
 
+  // Tag-specific record decoders
+  function decodeRecord(tag, innerBytes) {
+    // Unwrap outer: version + bin/data blob
+    var outer = [];
+    for (var ov of MessagePack.decodeMulti(innerBytes)) outer.push(ov);
+    var blob = outer.length > 1 ? outer[1] : outer[0];
+
+    switch (tag) {
+      case "kv":
+        return decodeKv(blob);
+      case "config-shell-alias":
+        return decodeAlias(blob);
+      case "dotfiles-var":
+        return decodeVar(blob);
+      case "script":
+        return decodeScript(blob);
+      default:
+        return decodeHistory(blob);
+    }
+  }
+
+  function decodeHistory(blob) {
+    var decoded;
+    if (blob instanceof Uint8Array) {
+      var inner = [];
+      for (var iv of MessagePack.decodeMulti(blob)) inner.push(iv);
+      decoded = inner.length > 1 ? inner[inner.length - 1] : inner[0];
+    } else {
+      decoded = blob;
+    }
+
+    if (decoded && decoded.command) {
+      return decoded.command;
+    } else if (Array.isArray(decoded)) {
+      // rmp_serde compact format: struct as array
+      // History: [id, timestamp, duration, exit, command, cwd, session, hostname, deleted_at]
+      return decoded[4] || JSON.stringify(decoded);
+    }
+    return JSON.stringify(decoded);
+  }
+
+  function decodeKv(blob) {
+    // KV: flat array [namespace, key, has_value, value?]
+    var decoded;
+    if (blob instanceof Uint8Array) {
+      decoded = MessagePack.decode(blob);
+    } else {
+      decoded = blob;
+    }
+
+    if (Array.isArray(decoded)) {
+      var ns = decoded[0] || "";
+      var key = decoded[1] || "";
+      var hasValue = decoded[2];
+      if (hasValue && decoded.length > 3) {
+        var val = decoded[3];
+        if (val instanceof Uint8Array) {
+          val = new TextDecoder().decode(val);
+        }
+        return ns + ":" + key + " = " + val;
+      }
+      return ns + ":" + key + " (deleted)";
+    }
+    return JSON.stringify(decoded);
+  }
+
+  function decodeAlias(blob) {
+    // Alias: u8(discriminant) + Create: array(2)[name, value], Delete: array(1)[name]
+    var parts = [];
+    if (blob instanceof Uint8Array) {
+      for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
+    } else {
+      parts = [blob];
+    }
+
+    var discriminant = (parts.length > 1) ? parts[0] : 0;
+    var data = parts.length > 1 ? parts[1] : parts[0];
+
+    if (discriminant === 0 && Array.isArray(data) && data.length >= 2) {
+      return "alias " + data[0] + "='" + data[1] + "'";
+    } else if (discriminant === 1 && Array.isArray(data) && data.length >= 1) {
+      return "unalias " + data[0];
+    }
+    return JSON.stringify(data);
+  }
+
+  function decodeVar(blob) {
+    // Var: u8(discriminant) + Create: array(3)[name, value, export], Delete: array(1)[name]
+    var parts = [];
+    if (blob instanceof Uint8Array) {
+      for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
+    } else {
+      parts = [blob];
+    }
+
+    var discriminant = (parts.length > 1) ? parts[0] : 0;
+    var data = parts.length > 1 ? parts[1] : parts[0];
+
+    if (discriminant === 0 && Array.isArray(data) && data.length >= 3) {
+      var name = data[0];
+      var value = data[1];
+      var isExport = data[2];
+      if (isExport) {
+        return "export " + name + "=" + value;
+      }
+      return name + "=" + value;
+    } else if (discriminant === 1 && Array.isArray(data) && data.length >= 1) {
+      return "unset " + data[0];
+    }
+    return JSON.stringify(data);
+  }
+
+  function decodeScript(blob) {
+    // Script: u8(discriminant) + Create/Update: bin(array(6)[id,name,desc,shebang,tags,script]),
+    //                            Delete: str(uuid)
+    var parts = [];
+    if (blob instanceof Uint8Array) {
+      for (var v of MessagePack.decodeMulti(blob)) parts.push(v);
+    } else {
+      parts = [blob];
+    }
+
+    var discriminant = (parts.length > 1) ? parts[0] : 0;
+    var data = parts.length > 1 ? parts[1] : parts[0];
+
+    if ((discriminant === 0 || discriminant === 2) && data instanceof Uint8Array) {
+      // Inner bin contains msgpack array
+      var scriptData = MessagePack.decode(data);
+      if (Array.isArray(scriptData) && scriptData.length >= 3) {
+        var name = scriptData[1] || "";
+        var desc = scriptData[2] || "";
+        return name + (desc ? " \u2014 " + desc : "");
+      }
+      return JSON.stringify(scriptData);
+    } else if (discriminant === 1 && typeof data === "string") {
+      return "delete " + data;
+    }
+    return JSON.stringify(data);
+  }
+
+  // Expose decoders for testing
+  window.AtuinDecoders = {
+    decodeRecord: decodeRecord,
+    decodeHistory: decodeHistory,
+    decodeKv: decodeKv,
+    decodeAlias: decodeAlias,
+    decodeVar: decodeVar,
+    decodeScript: decodeScript
+  };
+
   function updateKeyStatus() {
     var btn = document.getElementById("keyStatusBtn");
     var text = document.getElementById("keyStatusText");
@@ -94,35 +244,12 @@
           var innerBytes = PasetoV4._base64urlDecode(payload.data);
 
           // Atuin record data: nested msgpack with version prefixes.
-          // Outer: msgpack(version) + msgpack(bin)
-          // Inner bin: msgpack(version) + msgpack(history_struct)
+          // Outer: msgpack(version) + msgpack(bin/data)
           // Use decodeMulti at each level since decode() throws on extra bytes.
+          var rtag = el.getAttribute("data-rtag") || "";
           var display;
           if (typeof MessagePack !== "undefined") {
-            // Unwrap outer: version + bin blob
-            var outer = [];
-            for (var ov of MessagePack.decodeMulti(innerBytes)) outer.push(ov);
-            var blob = outer.length > 1 ? outer[1] : outer[0];
-
-            // Unwrap inner: version + history struct
-            var decoded;
-            if (blob instanceof Uint8Array) {
-              var inner = [];
-              for (var iv of MessagePack.decodeMulti(blob)) inner.push(iv);
-              decoded = inner.length > 1 ? inner[inner.length - 1] : inner[0];
-            } else {
-              decoded = blob;
-            }
-
-            if (decoded && decoded.command) {
-              display = decoded.command;
-            } else if (Array.isArray(decoded)) {
-              // rmp_serde compact format: struct as array
-              // History: [id, timestamp, duration, exit, command, cwd, session, hostname, deleted_at]
-              display = decoded[4] || JSON.stringify(decoded);
-            } else {
-              display = JSON.stringify(decoded);
-            }
+            display = decodeRecord(rtag, innerBytes);
           } else {
             display = new TextDecoder().decode(innerBytes);
           }
