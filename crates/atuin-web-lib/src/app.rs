@@ -1,6 +1,7 @@
-use axum::extract::{DefaultBodyLimit, Request};
+use axum::extract::{DefaultBodyLimit, OriginalUri, Request, State};
+use axum::http::StatusCode;
 use axum::middleware::{self, Next};
-use axum::response::Response;
+use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::Router;
 use minijinja::Environment;
@@ -11,6 +12,7 @@ use crate::auth::require_auth;
 use crate::client::AtuinClient;
 use crate::config::Config;
 use crate::routes;
+use crate::templates;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -51,13 +53,29 @@ pub fn create_router(state: AppState) -> Router {
 
     let public = Router::new()
         .merge(login)
-        .route("/user/{username}", get(routes::user::get))
         .route("/assets/{*path}", get(assets::serve_asset))
         .route("/favicon.ico", get(assets::serve_favicon));
 
     Router::new()
         .merge(authed)
         .merge(public)
+        .fallback(fallback_404)
         .layer(middleware::from_fn(security_headers))
         .with_state(state)
+}
+
+async fn fallback_404(
+    State(state): State<AppState>,
+    OriginalUri(uri): OriginalUri,
+) -> impl IntoResponse {
+    let html = templates::render(
+        &state.templates,
+        "404.html",
+        minijinja::context! { path => uri.path() },
+    );
+
+    match html {
+        Ok(body) => (StatusCode::NOT_FOUND, Html(body)).into_response(),
+        Err(_) => (StatusCode::NOT_FOUND, "404 — Page Not Found").into_response(),
+    }
 }

@@ -4,36 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <title>{{ username }} - Atuin Web</title>
+  <title>404 - Atuin Web</title>
   <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
   <link rel="stylesheet" href="/assets/css/app.css">
   <script src="/assets/js/theme.js"></script>
 </head>
 <body>
   <div class="login-container">
-    <div class="login-card" style="max-width: 500px;">
-      <div class="login-title">{{ username }}</div>
-      <div class="login-subtitle">User Profile</div>
+    <div class="login-card" style="max-width: 520px;">
+      <pre style="color: var(--brand-accent); font-size: 0.85rem; line-height: 1.4; margin-bottom: 1.5rem; text-align: left;">
+ ~  $ cd {{ path }}
+ bash: cd: {{ path }}: No such file or directory
+ ~  $ history search --404
+ 0 results found
+ ~  $ _</pre>
 
-      {% if user is mapping %}
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <tbody>
-              {% for key, value in user | items %}
-              <tr>
-                <td class="font-mono fw-bold">{{ key }}</td>
-                <td class="font-mono">{{ value }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <p class="text-secondary text-center">User not found.</p>
-      {% endif %}
+      <div class="login-title">404 &mdash; Page Not Found</div>
+      <div class="login-subtitle">This page has been lost to history.</div>
+
+      <a href="/" class="btn btn-brand w-100 mt-3">Go Home</a>
 
       <div class="mt-3 text-center">
-        <a href="/" class="btn btn-sm btn-outline-secondary">Back to Dashboard</a>
+        {% include "partials/theme_toggle.html" %}
       </div>
     </div>
     <div class="login-footer">
