@@ -19,7 +19,6 @@ tracing = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true }
 minijinja = { workspace = true }
-minijinja-autoreload = { workspace = true }
 rust-embed = { workspace = true }
 clap = { workspace = true }
 mime_guess = { workspace = true }

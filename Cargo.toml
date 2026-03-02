@@ -8,7 +8,7 @@ license = "MIT"
 
 [workspace.dependencies]
 axum = "0.8"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
@@ -20,8 +20,14 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "2"
 uuid = { version = "1", features = ["serde"] }
 minijinja = { version = "2", features = ["loader"] }
-minijinja-autoreload = "2"
 rust-embed = { version = "8", features = ["mime-guess"] }
 clap = { version = "4", features = ["derive", "env"] }
 mime_guess = "2"
 humantime = "2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
