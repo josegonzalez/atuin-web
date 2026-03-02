@@ -238,21 +238,14 @@ fn test_render_records_index() {
 }
 
 #[test]
-fn test_render_dashboard_with_counts() {
+fn test_render_dashboard() {
     let env = templates::create_environment();
-    let mut counts = std::collections::HashMap::new();
-    counts.insert("history".to_string(), 1234i64);
-    counts.insert("kv".to_string(), 56i64);
-    counts.insert("config-shell-alias".to_string(), 78i64);
-    counts.insert("dotfiles-var".to_string(), 9i64);
-    counts.insert("script".to_string(), 10i64);
 
     let result = templates::render(
         &env,
         "partials/dashboard_content.html",
         minijinja::context! {
             me => serde_json::json!({"username": "testuser"}),
-            counts => counts,
             status => serde_json::json!({"hosts": {}}),
             health => "Ok",
             errors => Vec::<String>::new(),
@@ -261,14 +254,8 @@ fn test_render_dashboard_with_counts() {
     );
     assert!(result.is_ok());
     let html = result.unwrap();
-    assert!(html.contains("1234"), "Should show history count");
-    assert!(html.contains("56"), "Should show kv count");
-    assert!(html.contains("78"), "Should show alias count");
-    assert!(html.contains("/records?tag=history"));
-    assert!(html.contains("/records?tag=kv"));
-    assert!(html.contains("/records?tag=config-shell-alias"));
-    assert!(html.contains("/records?tag=dotfiles-var"));
-    assert!(html.contains("/records?tag=script"));
+    assert!(html.contains("Healthy"), "Should show healthy badge");
+    assert!(html.contains("testuser"), "Should show username");
 }
 
 #[test]

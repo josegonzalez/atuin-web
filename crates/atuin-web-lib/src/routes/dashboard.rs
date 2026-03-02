@@ -58,33 +58,12 @@ pub async fn get(
         }
     };
 
-    // /api/v0/record returns {"hosts":{"uuid":{"tag":max_idx,...},...}}
-    // Sum values per tag across all hosts for per-tag counts,
-    // and pass hosts as the sync status breakdown
-    let (counts, status) = match records_res {
-        Ok(v) => {
-            let mut tag_totals: std::collections::HashMap<String, i64> =
-                std::collections::HashMap::new();
-            if let Some(hosts) = v["hosts"].as_object() {
-                for (_host_id, tags) in hosts {
-                    if let Some(tags_obj) = tags.as_object() {
-                        for (tag, count) in tags_obj {
-                            if let Some(n) = count.as_i64() {
-                                *tag_totals.entry(tag.clone()).or_insert(0) += n + 1;
-                            }
-                        }
-                    }
-                }
-            }
-            (tag_totals, v)
-        }
+    let status = match records_res {
+        Ok(v) => v,
         Err(e) => {
             tracing::warn!(error = %e, "failed to fetch record status from /api/v0/record");
             errors.push("Failed to fetch record status".to_string());
-            (
-                std::collections::HashMap::new(),
-                serde_json::Value::default(),
-            )
+            serde_json::Value::default()
         }
     };
 
@@ -104,7 +83,6 @@ pub async fn get(
         template,
         minijinja::context! {
             me => me,
-            counts => counts,
             status => status,
             health => health,
             errors => errors,
