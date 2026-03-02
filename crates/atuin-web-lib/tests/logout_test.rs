@@ -4,34 +4,7 @@ use axum::http::StatusCode;
 
 #[tokio::test]
 async fn test_logout_redirects_to_login() {
-    let mut app = common::spawn_app_with_token("test-token").await;
-
-    // Mock upstream so dashboard can render (need to be authed first)
-    let _me = app
-        .mock_server
-        .mock("GET", "/api/v0/me")
-        .with_status(200)
-        .with_header("content-type", "application/json")
-        .with_body(r#"{"username":"testuser"}"#)
-        .create_async()
-        .await;
-
-    let _record = app
-        .mock_server
-        .mock("GET", "/api/v0/record")
-        .with_status(200)
-        .with_header("content-type", "application/json")
-        .with_body(r#"{"hosts":{}}"#)
-        .create_async()
-        .await;
-
-    let _health = app
-        .mock_server
-        .mock("GET", "/healthz")
-        .with_status(200)
-        .with_body("Ok")
-        .create_async()
-        .await;
+    let app = common::spawn_app_with_token("test-token").await;
 
     let response = app.server.post("/logout").await;
     response.assert_status(StatusCode::SEE_OTHER);

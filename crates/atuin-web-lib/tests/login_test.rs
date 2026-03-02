@@ -47,6 +47,34 @@ async fn test_login_success_redirects_to_dashboard() {
 }
 
 #[tokio::test]
+async fn test_login_page_redirects_when_session_authed() {
+    let mut app = common::spawn_app().await;
+
+    // Login to establish a session token (no config token on this app)
+    let _mock = app
+        .mock_server
+        .mock("POST", "/login")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"session":"tok123"}"#)
+        .create_async()
+        .await;
+
+    let login_response = app
+        .server
+        .post("/login")
+        .content_type("application/x-www-form-urlencoded")
+        .bytes("username=testuser&password=testpass".into())
+        .await;
+    login_response.assert_status(StatusCode::SEE_OTHER);
+
+    // Now GET /login should redirect because session token is set
+    let response = app.server.get("/login").await;
+    response.assert_status(StatusCode::SEE_OTHER);
+    assert_eq!(response.headers().get("location").unwrap(), "/");
+}
+
+#[tokio::test]
 async fn test_login_failure_shows_error() {
     let mut app = common::spawn_app().await;
 

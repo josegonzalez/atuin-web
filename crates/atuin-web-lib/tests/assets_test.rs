@@ -49,6 +49,24 @@ async fn test_serve_js_asset() {
 }
 
 #[tokio::test]
+async fn test_serve_asset_cache_control_no_cache() {
+    let app = common::spawn_app().await;
+    let response = app.server.get("/assets/css/app.css").await;
+    response.assert_status_ok();
+    let cache_control = response
+        .headers()
+        .get("cache-control")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert_eq!(
+        cache_control, "no-cache",
+        "debug mode should use no-cache, got: {}",
+        cache_control
+    );
+}
+
+#[tokio::test]
 async fn test_serve_missing_asset_returns_404() {
     let app = common::spawn_app().await;
     let response = app.server.get("/assets/nonexistent.xyz").await;
