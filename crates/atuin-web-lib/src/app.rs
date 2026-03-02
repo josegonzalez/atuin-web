@@ -45,10 +45,7 @@ pub fn create_router(state: AppState) -> Router {
         .layer(middleware::from_fn_with_state(state.clone(), require_auth));
 
     let login = Router::new()
-        .route(
-            "/login",
-            get(routes::login::get).post(routes::login::post),
-        )
+        .route("/login", get(routes::login::get).post(routes::login::post))
         .layer(DefaultBodyLimit::max(16_384));
 
     let public = Router::new()
