@@ -42,9 +42,11 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-llvm-cov
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install cargo-llvm-cov
+        run: cargo binstall cargo-llvm-cov --no-confirm
 
       - name: Run tests with coverage
         run: |
