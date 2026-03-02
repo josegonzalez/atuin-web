@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 
 #[tokio::test]
 async fn test_upstream_error_returns_502() {
-    let err: reqwest::Error = reqwest::get("http://[::0]:1/bad")
+    let err: reqwest::Error = reqwest::get("https://[::0]:1/bad")
         .await
         .expect_err("should fail to connect");
     let web_err = WebError::Upstream(err);
