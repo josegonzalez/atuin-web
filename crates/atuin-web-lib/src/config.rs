@@ -1,7 +1,7 @@
 use clap::Parser;
 
 #[derive(Parser, Debug, Clone)]
-#[command(name = "atuin-web", about = "Read-only web UI for Atuin")]
+#[command(name = "atuin-web", about = "Read-only web UI for Atuin", version)]
 pub struct Config {
     /// Bind address
     #[arg(long, env = "ATUIN_WEB_BIND", default_value = "127.0.0.1:8080")]

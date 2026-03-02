@@ -35,3 +35,11 @@ fn test_config_with_args() {
     assert_eq!(config.log_level, "debug");
     assert!(config.secure_cookies);
 }
+
+#[test]
+fn test_version_flag() {
+    let result = Config::try_parse_from(["atuin-web", "--version"]);
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert_eq!(err.kind(), clap::error::ErrorKind::DisplayVersion);
+}
