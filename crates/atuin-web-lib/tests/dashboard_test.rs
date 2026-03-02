@@ -44,16 +44,15 @@ async fn test_dashboard_htmx_returns_partial() {
     let mut app = common::spawn_app_with_token("dash-token").await;
     setup_dashboard_mocks(&mut app).await;
 
-    let response = app
-        .server
-        .get("/")
-        .add_header("HX-Request", "true")
-        .await;
+    let response = app.server.get("/").add_header("HX-Request", "true").await;
     response.assert_status_ok();
     let body = response.text();
     // Partial should contain dashboard content but not the full HTML shell
     assert!(body.contains("dashuser"), "partial should contain username");
-    assert!(!body.contains("<!DOCTYPE"), "partial should not contain doctype");
+    assert!(
+        !body.contains("<!DOCTYPE"),
+        "partial should not contain doctype"
+    );
 }
 
 #[tokio::test]

@@ -17,7 +17,12 @@ async fn test_serve_css_asset() {
     let app = common::spawn_app().await;
     let response = app.server.get("/assets/css/app.css").await;
     response.assert_status(StatusCode::OK);
-    let content_type = response.headers().get("content-type").unwrap().to_str().unwrap();
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
     assert!(
         content_type.contains("text/css"),
         "expected text/css, got: {}",
@@ -30,7 +35,12 @@ async fn test_serve_js_asset() {
     let app = common::spawn_app().await;
     let response = app.server.get("/assets/js/decrypt.js").await;
     response.assert_status(StatusCode::OK);
-    let content_type = response.headers().get("content-type").unwrap().to_str().unwrap();
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
     assert!(
         content_type.contains("javascript"),
         "expected javascript content-type, got: {}",

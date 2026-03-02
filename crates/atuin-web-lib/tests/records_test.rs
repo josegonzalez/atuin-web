@@ -62,7 +62,10 @@ async fn test_records_with_valid_tag() {
         .await;
 
     app.mock_server
-        .mock("GET", mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()))
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()),
+        )
         .match_header("Authorization", "Token rec-token")
         .with_status(200)
         .with_header("content-type", "application/json")
@@ -93,7 +96,10 @@ async fn test_records_htmx_returns_partial() {
         .await;
 
     app.mock_server
-        .mock("GET", mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()))
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()),
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_record_next())
@@ -126,17 +132,17 @@ async fn test_records_sort_asc() {
         .await;
 
     app.mock_server
-        .mock("GET", mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()))
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()),
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_record_next())
         .create_async()
         .await;
 
-    let response = app
-        .server
-        .get("/records?tag=history&sort=asc")
-        .await;
+    let response = app.server.get("/records?tag=history&sort=asc").await;
     response.assert_status_ok();
     let body = response.text();
     // Verify sort is preserved in page links
@@ -160,7 +166,10 @@ async fn test_records_pagination() {
         .await;
 
     app.mock_server
-        .mock("GET", mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()))
+        .mock(
+            "GET",
+            mockito::Matcher::Regex(r"/api/v0/record/next\?.*".to_string()),
+        )
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(mock_record_next())
@@ -174,9 +183,5 @@ async fn test_records_pagination() {
     response.assert_status_ok();
     let body = response.text();
     // 100 records / 25 per page = 4 pages, page 2 should render
-    assert!(
-        body.contains("Page 2"),
-        "should show page 2, got: {}",
-        body
-    );
+    assert!(body.contains("Page 2"), "should show page 2, got: {}", body);
 }

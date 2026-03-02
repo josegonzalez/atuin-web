@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use atuin_web_lib::app::{AppState, create_router};
+use atuin_web_lib::app::{create_router, AppState};
 use atuin_web_lib::client::AtuinClient;
 use atuin_web_lib::config::Config;
 use atuin_web_lib::templates;

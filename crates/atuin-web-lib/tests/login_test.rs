@@ -8,7 +8,10 @@ async fn test_login_page_renders() {
     let response = app.server.get("/login").await;
     response.assert_status_ok();
     let body = response.text();
-    assert!(body.contains("Sign in"), "login page should contain 'Sign in'");
+    assert!(
+        body.contains("Sign in"),
+        "login page should contain 'Sign in'"
+    );
 }
 
 #[tokio::test]
