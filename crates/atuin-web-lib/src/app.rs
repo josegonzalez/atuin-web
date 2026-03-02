@@ -50,6 +50,7 @@ pub fn create_router(state: AppState) -> Router {
 
     let public = Router::new()
         .merge(login)
+        .route("/healthz", get(healthz))
         .route("/assets/{*path}", get(assets::serve_asset))
         .route("/favicon.ico", get(assets::serve_favicon));
 
@@ -59,6 +60,10 @@ pub fn create_router(state: AppState) -> Router {
         .fallback(fallback_404)
         .layer(middleware::from_fn(security_headers))
         .with_state(state)
+}
+
+async fn healthz() -> impl IntoResponse {
+    axum::Json(serde_json::json!({"status": "ok"}))
 }
 
 async fn fallback_404(
