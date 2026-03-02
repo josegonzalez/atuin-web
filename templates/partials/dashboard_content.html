@@ -4,9 +4,9 @@
       <div class="stat-label">Server Status</div>
       <div class="stat-value">
         {% if health == "Ok" %}
-          <span class="badge badge-status-healthy">Healthy</span>
+          <span class="status-orb status-orb-healthy"></span> Healthy
         {% else %}
-          <span class="badge badge-status-error">Unreachable</span>
+          <span class="status-orb status-orb-error"></span> Unreachable
         {% endif %}
       </div>
     </div>
@@ -15,7 +15,7 @@
   <div class="card">
     <div class="card-body">
       <div class="stat-label">Username</div>
-      <div class="stat-value font-mono" style="font-size: 1.25rem;">{{ me.username | default("—") }}</div>
+      <div class="stat-value font-mono">{{ me.username | default("—") }}</div>
     </div>
   </div>
 
