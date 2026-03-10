@@ -20,8 +20,46 @@ docker run -p 8080:8080 \
   ghcr.io/josegonzalez/atuin-web:v0.2.0
 ```
 
-Replace `v0.1.1` with the desired release tag. Available tags are listed on the
+Replace `v0.2.0` with the desired release tag. Available tags are listed on the
 [packages page](https://github.com/josegonzalez/atuin-web/pkgs/container/atuin-web).
+
+## Docker Compose
+
+```yaml
+services:
+  atuin-web:
+    image: ghcr.io/josegonzalez/atuin-web:v0.2.0
+    ports:
+      - "8080:8080"
+    environment:
+      ATUIN_WEB_BIND: "0.0.0.0:8080"
+      ATUIN_WEB_SERVER_URL: "http://atuin-server:8888"
+      ATUIN_WEB_TOKEN: "your-token"
+    restart: unless-stopped
+```
+
+If your atuin server is also running in Docker Compose, place both services in the
+same Compose file (or use an external network) so `atuin-web` can reach it by
+service name:
+
+```yaml
+services:
+  atuin-server:
+    image: ghcr.io/atuinsh/atuin:latest
+    # ... your atuin server config ...
+
+  atuin-web:
+    image: ghcr.io/josegonzalez/atuin-web:v0.2.0
+    ports:
+      - "8080:8080"
+    environment:
+      ATUIN_WEB_BIND: "0.0.0.0:8080"
+      ATUIN_WEB_SERVER_URL: "http://atuin-server:8888"
+      ATUIN_WEB_TOKEN: "your-token"
+    restart: unless-stopped
+    depends_on:
+      - atuin-server
+```
 
 ## Reverse Proxy (nginx)
 
@@ -51,7 +89,7 @@ http {
     server {
         # ... existing config ...
 
-        location /login {
+        location /proxy/login {
             limit_req zone=login burst=3 nodelay;
             proxy_pass http://127.0.0.1:8080;
             proxy_set_header Host $host;
@@ -62,10 +100,6 @@ http {
     }
 }
 ```
-
-## Session Storage
-
-The default in-memory session store is suitable for single-instance deployments with moderate traffic. Sessions expire after the configured TTL (default 24 hours). For high-traffic deployments, consider using a persistent session store or placing atuin-web behind a load balancer with sticky sessions.
 
 ## systemd
 
