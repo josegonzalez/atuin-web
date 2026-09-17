@@ -15,6 +15,14 @@ cargo build
 cargo run -- --atuin-server-url http://localhost:8888
 ```
 
+On Nix or NixOS, the repository is a flake:
+
+```bash
+nix run github:josegonzalez/atuin-web -- --atuin-server-url http://localhost:8888
+```
+
+See [Deployment](docs/deployment.md#nixos) for the NixOS module.
+
 ## Documentation
 
 See [docs/](docs/) for full documentation:
