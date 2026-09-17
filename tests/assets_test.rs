@@ -49,7 +49,7 @@ async fn test_serve_js_asset() {
 }
 
 #[tokio::test]
-async fn test_serve_asset_cache_control_no_cache() {
+async fn test_serve_asset_cache_control_matches_build_profile() {
     let app = common::spawn_app().await;
     let response = app.server.get("/assets/css/app.css").await;
     response.assert_status_ok();
@@ -59,9 +59,15 @@ async fn test_serve_asset_cache_control_no_cache() {
         .unwrap()
         .to_str()
         .unwrap();
+    // serve_asset revalidates every request in debug and caches hard in release.
+    let expected = if cfg!(debug_assertions) {
+        "no-cache"
+    } else {
+        "public, max-age=31536000, immutable"
+    };
     assert_eq!(
-        cache_control, "no-cache",
-        "debug mode should use no-cache, got: {}",
+        cache_control, expected,
+        "unexpected cache-control for this build profile, got: {}",
         cache_control
     );
 }
