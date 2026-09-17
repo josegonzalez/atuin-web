@@ -40,6 +40,7 @@ pub struct RecordsQuery {
     pub tag: Option<String>,
     #[serde(default = "default_sort")]
     pub sort: String,
+    pub host: Option<String>,
 }
 
 fn default_page() -> u64 {
@@ -50,6 +51,50 @@ fn default_page_size() -> u64 {
 }
 fn default_sort() -> String {
     "desc".to_string()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct HostOption {
+    pub id: String,
+    pub total_records: u64,
+}
+
+/// List every host holding records for a tag, largest first, ties broken by id.
+///
+/// The per-host number the API reports is the highest record index, so a host
+/// that appears at all holds at least one record.
+pub fn host_options(
+    hosts: &serde_json::Map<String, serde_json::Value>,
+    tag: &str,
+) -> Vec<HostOption> {
+    let mut options: Vec<HostOption> = hosts
+        .iter()
+        .filter_map(|(id, tags)| {
+            tags.get(tag)
+                .and_then(|v| v.as_u64())
+                .map(|idx| HostOption {
+                    id: id.clone(),
+                    total_records: idx + 1,
+                })
+        })
+        .collect();
+    options.sort_by(|a, b| {
+        b.total_records
+            .cmp(&a.total_records)
+            .then_with(|| a.id.cmp(&b.id))
+    });
+    options
+}
+
+/// Pick the host to display: the requested one when it holds records, else the largest.
+///
+/// Falling back to the largest matters on a multi-host account: picking whichever
+/// host happened to come first showed one machine's records and hid the rest.
+pub fn select_host(options: &[HostOption], requested: Option<&str>) -> Option<HostOption> {
+    requested
+        .and_then(|want| options.iter().find(|o| o.id == want))
+        .or_else(|| options.first())
+        .cloned()
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -165,29 +210,17 @@ pub async fn get(
 
     let records = state.client.get("/api/v0/record", &token).await;
 
-    // Extract total record count for the selected tag
-    // Find the first host that has records for this tag
-    let (total_records, target_host) = match &records {
-        Ok(status) => {
-            if let Some(hosts) = status["hosts"].as_object() {
-                let mut found_host = None;
-                let mut count = 0u64;
-                for (host_id, tags) in hosts {
-                    if let Some(n) = tags.get(&tag).and_then(|v| v.as_u64()) {
-                        if found_host.is_none() {
-                            found_host = Some(host_id.clone());
-                            count = n + 1;
-                            break;
-                        }
-                    }
-                }
-                (count, found_host)
-            } else {
-                (0, None)
-            }
-        }
-        Err(_) => (0, None),
+    let hosts = match &records {
+        Ok(status) => status["hosts"]
+            .as_object()
+            .map(|hosts| host_options(hosts, &tag))
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
     };
+
+    let selected = select_host(&hosts, query.host.as_deref());
+    let total_records = selected.as_ref().map(|h| h.total_records).unwrap_or(0);
+    let target_host = selected.as_ref().map(|h| h.id.clone());
 
     let page_size = clamp_page_size(query.page_size);
     let pagination = calculate_pagination(query.page, total_records, page_size);
@@ -205,7 +238,7 @@ pub async fn get(
     };
 
     // Fetch record/next for the target host
-    let next = match target_host {
+    let next = match &target_host {
         Some(host_id) => {
             let path = format!(
                 "/api/v0/record/next?host={}&tag={}&start={}&count={}",
@@ -251,6 +284,8 @@ pub async fn get(
             tag => tag,
             tag_label => label,
             sort => sort,
+            hosts => hosts,
+            host => target_host.unwrap_or_default(),
             has_config_token => state.config.token.is_some(),
         },
     )?;
@@ -261,6 +296,64 @@ pub async fn get(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn hosts_json(pairs: &[(&str, u64)]) -> serde_json::Map<String, serde_json::Value> {
+        let mut map = serde_json::Map::new();
+        for (id, idx) in pairs {
+            map.insert(
+                (*id).to_string(),
+                serde_json::json!({ "history": idx, "kv": idx }),
+            );
+        }
+        map
+    }
+
+    #[test]
+    fn test_host_options_orders_by_size() {
+        let hosts = hosts_json(&[("aaa", 0), ("bbb", 8121), ("ccc", 40)]);
+        let options = host_options(&hosts, "history");
+        assert_eq!(
+            options.iter().map(|o| o.id.as_str()).collect::<Vec<_>>(),
+            vec!["bbb", "ccc", "aaa"]
+        );
+        assert_eq!(options[0].total_records, 8122);
+        assert_eq!(options[2].total_records, 1);
+    }
+
+    #[test]
+    fn test_host_options_skips_hosts_without_the_tag() {
+        let mut hosts = hosts_json(&[("aaa", 3)]);
+        hosts.insert("bbb".to_string(), serde_json::json!({ "script": 9 }));
+        let options = host_options(&hosts, "history");
+        assert_eq!(options.len(), 1);
+        assert_eq!(options[0].id, "aaa");
+    }
+
+    #[test]
+    fn test_select_host_prefers_the_largest() {
+        let hosts = hosts_json(&[("aaa", 0), ("bbb", 8121)]);
+        let options = host_options(&hosts, "history");
+        assert_eq!(select_host(&options, None).unwrap().id, "bbb");
+    }
+
+    #[test]
+    fn test_select_host_honours_the_request() {
+        let hosts = hosts_json(&[("aaa", 0), ("bbb", 8121)]);
+        let options = host_options(&hosts, "history");
+        assert_eq!(select_host(&options, Some("aaa")).unwrap().id, "aaa");
+    }
+
+    #[test]
+    fn test_select_host_falls_back_when_the_request_is_unknown() {
+        let hosts = hosts_json(&[("aaa", 0), ("bbb", 8121)]);
+        let options = host_options(&hosts, "history");
+        assert_eq!(select_host(&options, Some("nope")).unwrap().id, "bbb");
+    }
+
+    #[test]
+    fn test_select_host_on_empty_account() {
+        assert!(select_host(&[], None).is_none());
+    }
 
     #[test]
     fn test_clamp_page_size_exact() {

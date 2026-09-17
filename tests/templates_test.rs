@@ -78,6 +78,77 @@ fn test_render_pagination_multi_page() {
 }
 
 #[test]
+fn test_render_pagination_host_picker() {
+    let env = templates::create_environment();
+    let pagination = PaginationInfo {
+        current_page: 1,
+        total_pages: 4,
+        total_records: 100,
+        page_size: 25,
+        has_prev: false,
+        has_next: true,
+        prev_page: 1,
+        next_page: 2,
+        page_numbers: vec![1, 2, 3, 4],
+        page_sizes: vec![25, 50, 100],
+    };
+    let hosts = serde_json::json!([
+        { "id": "bbb", "total_records": 8122 },
+        { "id": "aaa", "total_records": 1 },
+    ]);
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([]),
+            pagination => pagination,
+            tag => "history",
+            sort => "desc",
+            hosts => hosts,
+            host => "bbb",
+        },
+    );
+    assert!(result.is_ok());
+    let html = result.unwrap();
+    assert!(html.contains("host-select"));
+    assert!(html.contains("bbb (8122)"));
+    assert!(html.contains("aaa (1)"));
+    assert!(html.contains("host=bbb"));
+}
+
+#[test]
+fn test_render_pagination_host_picker_hidden_for_one_host() {
+    let env = templates::create_environment();
+    let pagination = PaginationInfo {
+        current_page: 1,
+        total_pages: 4,
+        total_records: 100,
+        page_size: 25,
+        has_prev: false,
+        has_next: true,
+        prev_page: 1,
+        next_page: 2,
+        page_numbers: vec![1, 2, 3, 4],
+        page_sizes: vec![25, 50, 100],
+    };
+    let hosts = serde_json::json!([{ "id": "bbb", "total_records": 8122 }]);
+    let result = templates::render(
+        &env,
+        "partials/record_table.html",
+        minijinja::context! {
+            next => serde_json::json!([]),
+            pagination => pagination,
+            tag => "history",
+            sort => "desc",
+            hosts => hosts,
+            host => "bbb",
+        },
+    );
+    assert!(result.is_ok());
+    assert!(!result.unwrap().contains("host-select"));
+}
+
+#[test]
 fn test_render_pagination_hidden_single_page() {
     let env = templates::create_environment();
     let pagination = PaginationInfo {
