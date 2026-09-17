@@ -101,6 +101,57 @@ http {
 }
 ```
 
+## NixOS
+
+The repository is a flake, exposing a package, an overlay and a NixOS module.
+
+Try it without installing anything:
+
+```bash
+nix run github:josegonzalez/atuin-web -- --atuin-server-url http://127.0.0.1:8888
+```
+
+Add it to a system configuration:
+
+```nix
+{
+  inputs.atuin-web.url = "github:josegonzalez/atuin-web";
+
+  outputs = { nixpkgs, atuin-web, ... }: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      modules = [
+        atuin-web.nixosModules.default
+        {
+          nixpkgs.overlays = [ atuin-web.overlays.default ];
+
+          services.atuin-web = {
+            enable = true;
+            port = 8080;
+            atuinServerUrl = "http://127.0.0.1:8888";
+            secureCookies = true;
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+The module runs atuin-web under `DynamicUser` with a restrictive sandbox, and
+listens on loopback by default so a reverse proxy can sit in front. Settings that
+should not land in the world-readable Nix store go in an environment file:
+
+```nix
+services.atuin-web.environmentFile = "/run/secrets/atuin-web";
+```
+
+```env
+ATUIN_WEB_TOKEN=your-token
+```
+
+Options: `host`, `port`, `atuinServerUrl`, `sessionExpiry`, `logLevel`,
+`secureCookies`, `openFirewall`, `environmentFile` and `package`.
+
 ## systemd
 
 ```ini
