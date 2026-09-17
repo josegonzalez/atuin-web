@@ -11,8 +11,8 @@
       <ul class="pagination pagination-sm mb-0">
         <li class="page-item{% if not pagination.has_prev %} disabled{% endif %}">
           <a class="page-link"
-             href="/records?page={{ pagination.prev_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
-             hx-get="/records?page={{ pagination.prev_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
+             href="/records?page={{ pagination.prev_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
+             hx-get="/records?page={{ pagination.prev_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
              hx-target="#records-content"
              hx-push-url="true"
              {% if not pagination.has_prev %}tabindex="-1" aria-disabled="true"{% endif %}>
@@ -23,8 +23,8 @@
         {% if pagination.page_numbers[0] > 1 %}
         <li class="page-item">
           <a class="page-link"
-             href="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
-             hx-get="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
+             href="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
+             hx-get="/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
              hx-target="#records-content"
              hx-push-url="true">1</a>
         </li>
@@ -36,8 +36,8 @@
         {% for num in pagination.page_numbers %}
         <li class="page-item{% if num == pagination.current_page %} active{% endif %}">
           <a class="page-link"
-             href="/records?page={{ num }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
-             hx-get="/records?page={{ num }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
+             href="/records?page={{ num }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
+             hx-get="/records?page={{ num }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
              hx-target="#records-content"
              hx-push-url="true">{{ num }}</a>
         </li>
@@ -49,8 +49,8 @@
         {% endif %}
         <li class="page-item">
           <a class="page-link"
-             href="/records?page={{ pagination.total_pages }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
-             hx-get="/records?page={{ pagination.total_pages }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
+             href="/records?page={{ pagination.total_pages }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
+             hx-get="/records?page={{ pagination.total_pages }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
              hx-target="#records-content"
              hx-push-url="true">{{ pagination.total_pages }}</a>
         </li>
@@ -58,8 +58,8 @@
 
         <li class="page-item{% if not pagination.has_next %} disabled{% endif %}">
           <a class="page-link"
-             href="/records?page={{ pagination.next_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
-             hx-get="/records?page={{ pagination.next_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}"
+             href="/records?page={{ pagination.next_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
+             hx-get="/records?page={{ pagination.next_page }}&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}"
              hx-target="#records-content"
              hx-push-url="true"
              {% if not pagination.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
@@ -70,8 +70,19 @@
     </nav>
     {% endif %}
 
+    {% if hosts is defined and hosts | length > 1 %}
+    <select class="form-select form-select-sm host-select"
+            onchange="window.location.href='/records?page=1&page_size={{ pagination.page_size }}&tag={{ tag }}&sort={{ sort }}&host=' + this.value">
+      {% for option in hosts %}
+      <option value="{{ option.id }}"{% if option.id == host | default('') %} selected{% endif %}>
+        {{ option.id }} ({{ option.total_records }})
+      </option>
+      {% endfor %}
+    </select>
+    {% endif %}
+
     <select class="form-select form-select-sm page-size-select"
-            onchange="window.location.href='/records?page=1&page_size=' + this.value + '&tag={{ tag }}&sort={{ sort }}'">
+            onchange="window.location.href='/records?page=1&page_size=' + this.value + '&tag={{ tag }}&sort={{ sort }}&host={{ host | default('') }}'">
       {% for size in pagination.page_sizes %}
       <option value="{{ size }}"{% if size == pagination.page_size %} selected{% endif %}>
         {{ size }} per page
