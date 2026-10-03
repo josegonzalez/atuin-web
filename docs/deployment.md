@@ -149,7 +149,7 @@ services.atuin-web.environmentFile = "/run/secrets/atuin-web";
 ATUIN_WEB_TOKEN=your-token
 ```
 
-Options: `host`, `port`, `atuinServerUrl`, `sessionExpiry`, `logLevel`,
+Options: `host`, `port`, `atuinServerUrl`, `sessionExpiry`, `logLevel`, `logFormat`,
 `secureCookies`, `openFirewall`, `environmentFile` and `package`.
 
 ## systemd

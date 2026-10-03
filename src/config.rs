@@ -1,5 +1,7 @@
 use clap::Parser;
 
+use crate::logging::LogFormat;
+
 #[derive(Parser, Debug, Clone)]
 #[command(name = "atuin-web", about = "Read-only web UI for Atuin", version)]
 pub struct Config {
@@ -26,6 +28,10 @@ pub struct Config {
     /// Log level
     #[arg(long, env = "ATUIN_WEB_LOG_LEVEL", default_value = "info")]
     pub log_level: String,
+
+    /// Log output format
+    #[arg(long, env = "ATUIN_WEB_LOG_FORMAT", value_enum, default_value_t = LogFormat::Text)]
+    pub log_format: LogFormat,
 
     /// Set Secure flag on session cookies (enable when behind HTTPS)
     #[arg(long, env = "ATUIN_WEB_SECURE_COOKIES", default_value = "false")]
