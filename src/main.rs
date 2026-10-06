@@ -3,6 +3,7 @@ use std::sync::Arc;
 use atuin_web::app::{self, AppState};
 use atuin_web::client::AtuinClient;
 use atuin_web::config::Config;
+use atuin_web::logging;
 use atuin_web::templates;
 use clap::Parser;
 use tower_sessions::cookie::time::Duration;
@@ -21,12 +22,7 @@ async fn main() {
         std::process::exit(if ok { 0 } else { 1 });
     }
 
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| config.log_level.parse().unwrap_or_default()),
-        )
-        .init();
+    logging::init(&config.log_level, config.log_format);
 
     tracing::info!("Starting atuin-web on {}", config.bind);
     tracing::info!("Proxying to atuin server at {}", config.atuin_server_url);

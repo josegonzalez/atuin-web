@@ -18,7 +18,7 @@ tower = "0.5"
 tower-sessions = "0.15"
 tower-sessions-memory-store = "0.15"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 thiserror = "2"
 uuid = { version = "1", features = ["serde"] }
 minijinja = { version = "2", features = ["loader"] }

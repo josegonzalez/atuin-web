@@ -59,6 +59,16 @@ in
       description = "Log level.";
     };
 
+    logFormat = lib.mkOption {
+      type = lib.types.enum [
+        "text"
+        "json"
+        "ecs"
+      ];
+      default = "text";
+      description = "Log output format: plain text, JSON, or Elastic Common Schema JSON.";
+    };
+
     secureCookies = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -99,6 +109,7 @@ in
         ATUIN_WEB_SERVER_URL = cfg.atuinServerUrl;
         ATUIN_WEB_SESSION_EXPIRY = toString cfg.sessionExpiry;
         ATUIN_WEB_LOG_LEVEL = cfg.logLevel;
+        ATUIN_WEB_LOG_FORMAT = cfg.logFormat;
         ATUIN_WEB_SECURE_COOKIES = lib.boolToString cfg.secureCookies;
       };
 
